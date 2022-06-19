@@ -1,0 +1,12 @@
+parser: "@typescript-eslint/parser"
+plugins:
+  - "@typescript-eslint"
+extends: google
+parserOptions:
+  ecmaVersion: 8
+
+rules:
+  max-len:
+    - 2
+    - 120
+    - 2
