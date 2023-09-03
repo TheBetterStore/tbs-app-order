@@ -1,6 +1,5 @@
 
 import {OrderItemViewModel, OrderViewModel} from '../viewmodels/order-viewmodel';
-import {CreateOrderCommand} from '../../domain/commands/create-order.command';
 import {OrderItemVO} from '../../domain/models/order-item.vo';
 import {Order} from '../../domain/entities/order';
 
@@ -10,37 +9,15 @@ import {Order} from '../../domain/entities/order';
 export class OrderViewModelMapper {
   /**
    * mapToCreateNewOrderCommand
-   * @param {OrderViewModel} orderVM
+   * @param {OrderViewModel} vm
    * @return {CreateOrderCommand}
    */
-  public static mapToCreateNewOrderCommand(orderVM: OrderViewModel): CreateOrderCommand {
+  public static mapToNewOrder(vm: OrderViewModel): Order {
     const currentTime = new Date();
-    const cmd: CreateOrderCommand = {
-      orderId: currentTime.getTime().toString(26).toUpperCase(),
-      customerId: orderVM.customerId,
-      receiptEmail: orderVM.receiptEmail || '',
-      taxRate: orderVM.taxRate,
-      chargeTotal: orderVM.grossTotal,
-      createdTime: new Date().toISOString(),
-      orderItems: orderVM.orderItems.map(OrderViewModelMapper.toOrderItem),
-    };
-    return cmd;
-  }
-
-  /**
-   * toOrderItem
-   * @param {OrderItemViewModel} r
-   * @private
-   * @return {OrderItemVO}
-   */
-  private static toOrderItem(r: OrderItemViewModel): OrderItemVO {
-    const result: OrderItemVO = {
-      productId: r.productId,
-      productName: r.productName,
-      quantity: r.quantity,
-      price: r.price,
-    };
-    return result;
+    const newOrderId = currentTime.getTime().toString(26).toUpperCase();
+    const o = new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems, vm.createdTime,
+        vm.createdTime, vm.taxRate, vm.grossTotal);
+    return o;
   }
 
   /**

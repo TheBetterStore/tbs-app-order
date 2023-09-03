@@ -55,7 +55,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/application/lambdas/get-orders/index.handler
+      Handler: src/application/command-handlers/get-orders/index.handler
       Runtime: nodejs18.x
       MemorySize: 128
       Timeout: 10
@@ -83,7 +83,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - src/application/lambdas/get-orders/index.ts
+          - src/application/command-handlers/get-orders/index.ts
   GetOrdersFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -94,7 +94,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/application/lambdas/confirm-order/index.handler
+      Handler: src/application/command-handlers/confirm-order/index.handler
       Runtime: nodejs18.x
       MemorySize: 128
       Timeout: 10
@@ -123,7 +123,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - src/application/lambdas/confirm-order/index.ts
+          - src/application/command-handlers/confirm-order/index.ts
 
   ConfirmOrderFunctionLogs:
     Type: AWS::Logs::LogGroup

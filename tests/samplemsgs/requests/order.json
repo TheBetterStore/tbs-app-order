@@ -1,0 +1,24 @@
+{
+  "products": [
+    {
+      "imageUrl": "https://static-ap-southeast-2-048116471576-tbs-prod.s3.ap-southeast-2.amazonaws.com/images/products/asuscb.png",
+      "brandId": "ASUS",
+      "category": "COMPUTERS",
+      "lastUpdatedTime": "2021-11-10T19:18:53.481Z",
+      "price": 599,
+      "description": "A 2-in-1 folding laptop/tablet",
+      "name": "Chromebook Flip C214MA",
+      "hitCount": 1232,
+      "productId": "01610d7a-11e2-4802-9f5b-8518fa532be8",
+      "sku": "1234",
+      "type": "PHYSICAL",
+      "quantity": 1
+    }
+  ],
+  "tax": 78.13043478260875,
+  "taxRate": 0.15,
+  "netTotal": 599,
+  "grossTotal": 520.8695652173913,
+  "receiptEmail": "brycepc@hotmail.com",
+  "stripeToken": "tok_1L4HLwBr4sBQHo4JgDaUewkc"
+}
