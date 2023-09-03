@@ -54,11 +54,11 @@ Resources:
   GetOrdersFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./dist/tbs-app-order.zip
-      Handler: application/lambdas/get-orders/index.handler
-      Runtime: nodejs14.x
+      CodeUri: ./
+      Handler: src/application/lambdas/get-orders/index.handler
+      Runtime: nodejs18.x
       MemorySize: 128
-      Timeout: 100
+      Timeout: 10
       AutoPublishAlias: prod
       Description: Get order functions
       Tracing: Active
@@ -76,7 +76,14 @@ Resources:
                 - dynamodb:Scan
                 - dynamodb:Get*
               Resource: !GetAtt OrderTable.Arn
-
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/application/lambdas/get-orders/index.ts
   GetOrdersFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -86,11 +93,11 @@ Resources:
   ConfirmOrderFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./dist/tbs-app-order.zip
-      Handler: application/lambdas/confirm-order/index.handler
-      Runtime: nodejs14.x
+      CodeUri: ./
+      Handler: src/application/lambdas/confirm-order/index.handler
+      Runtime: nodejs18.x
       MemorySize: 128
-      Timeout: 100
+      Timeout: 10
       AutoPublishAlias: prod
       Description: Upsert order function
       Tracing: Active
@@ -109,6 +116,14 @@ Resources:
               Action: events:PutEvents
               Resource:
                 Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/application/lambdas/confirm-order/index.ts
 
   ConfirmOrderFunctionLogs:
     Type: AWS::Logs::LogGroup

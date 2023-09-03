@@ -12,6 +12,13 @@ exports.handler = async (event, context) => {
   const orderTableName = process.env.ORDER_TABLE_NAME || '';
   container.bind<string>(TYPES.OrderTableName).toConstantValue(orderTableName);
 
+  // Note the follow 2 bindings are redundant for GetOrder
+  const paymentApiUrl = process.env.PAYMENT_API_URL || '';
+  container.bind<string>(TYPES.PaymentApiUrl).toConstantValue(paymentApiUrl);
+
+  const tbsEventBusArn = process.env.TBS_EVENTBUS_ARN || '';
+  container.bind<string>(TYPES.TbsEventBusArn).toConstantValue(tbsEventBusArn);
+
   const svc = container.get<IAppOrderService>(TYPES.IAppOrderService);
   const p = await svc.getOrders('BOOKS');
 
