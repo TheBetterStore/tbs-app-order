@@ -7,9 +7,10 @@ import * as util from 'util';
 import {IAppOrderService} from './app-order-service.interface';
 import {OrderViewModel} from '../viewmodels/order-viewmodel';
 import {ConfirmOrderRequestViewModel} from '../viewmodels/confirm-order-request.viewmodel';
-import {IOrderCommandHandler} from '../handlers/order-command.handler.interface';
 import {OrderViewModelMapper} from '../mappers/order-viewmodel.mapper';
-import {CreateOrderCommand} from '../../domain/commands/create-order.command';
+import {PutEventsCommandInput} from '@aws-sdk/client-eventbridge';
+import {IEventBridgeClient} from '../../infrastructure/interfaces/eventbridge-client.interface';
+import {Order} from '../../domain/entities/order';
 
 @injectable()
 /**
@@ -18,24 +19,28 @@ import {CreateOrderCommand} from '../../domain/commands/create-order.command';
 export class AppOrderService implements IAppOrderService {
   private repo: IOrderRepository;
   private restApiClient: IRestApiClient;
-  private paymentApiUrl: String;
-  private orderCommandHandler: IOrderCommandHandler;
+  private eventBridgeClient: IEventBridgeClient;
+  private tbsEventBridgeArn: string;
+  private paymentApiUrl: string;
 
   /**
    * constructor
    * @param {IRestApiClient} restApiClient
-   * @param {IOrderCommandHandler} orderCommandHandler
    * @param {string} paymentApiUrl
+   * @param {IEventBridgeClient} eventBridgeClient
+   * @param {string} tbsEventBridgeArn
    * @param {IOrderRepository} repo
    */
   constructor(@inject(TYPES.IRestApiClient) restApiClient: IRestApiClient,
-              @inject(TYPES.IOrderCommandHandler) orderCommandHandler: IOrderCommandHandler,
               @inject(TYPES.PaymentApiUrl) paymentApiUrl: string,
+              @inject(TYPES.IEventBridgeClient) eventBridgeClient: IEventBridgeClient,
+              @inject(TYPES.TbsEventBusArn) tbsEventBridgeArn: string,
               @inject(TYPES.IOrderRepository) repo: IOrderRepository) {
     this.restApiClient = restApiClient;
-    this.paymentApiUrl = paymentApiUrl;
     this.repo = repo;
-    this.orderCommandHandler = orderCommandHandler;
+    this.eventBridgeClient= eventBridgeClient;
+    this.tbsEventBridgeArn = tbsEventBridgeArn;
+    this.paymentApiUrl = paymentApiUrl;
   }
 
   /**
@@ -66,7 +71,7 @@ export class AppOrderService implements IAppOrderService {
    * confirmOrder
    * @param {ConfirmOrderRequestViewModel} o
    */
-  async confirmOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
+  async confirmOrder(o: ConfirmOrderRequestViewModel): Promise<Order> {
     Logger.info('Entered confirmOrder');
 
     Logger.info('First, confirming payment with vendor (Stripe)');
@@ -89,9 +94,50 @@ export class AppOrderService implements IAppOrderService {
       throw e1;
     }
 
-    const createOrderCmd: CreateOrderCommand = OrderViewModelMapper.mapToCreateNewOrderCommand(o);
-    const res = await this.orderCommandHandler.handleCreateOrderCommand(createOrderCmd);
+    const order: Order = OrderViewModelMapper.mapToNewOrder(o);
+    const res = await this.createOrder(order);
     Logger.info('Exiting upsertOrder', res);
     return res;
+  }
+
+  /**
+   * createOrder
+   * @param {Order} o
+   */
+  async createOrder(o: Order): Promise<Order> {
+    Logger.info('Entered createOrder');
+    const res: Order = await this.repo.createOrder(o);
+    const eventRes = await this.writeEvent(o);
+    Logger.debug('Write event result:', JSON.stringify(eventRes));
+    Logger.info('Exiting handleCreateOrderCommand', res);
+    return res;
+  }
+
+  /**
+   * writeEvent
+   * @param {Order} o
+   */
+  async writeEvent(o: Order) {
+    const event= JSON.stringify(
+        {
+          orderId: o.orderId,
+          customerId: o.customerId,
+          orderItems: o.orderItems,
+          taxRate: o.taxRate,
+          chargeTotal: o.amountCharged,
+        });
+    Logger.debug(event);
+
+    // Send event for interested parties
+    const params: PutEventsCommandInput = {
+      Entries: [{
+        Source: 'tbs-app-order.OrderCommandHandler',
+        Detail: event,
+        DetailType: 'OrderCreatedEvent',
+        EventBusName: this.tbsEventBridgeArn,
+      }],
+    };
+    Logger.debug(`Writing event with params:`, JSON.stringify(params));
+    return this.eventBridgeClient.send(params);
   }
 }

@@ -4,6 +4,7 @@ const TYPES = {
   IDynamoDBClient: Symbol('IDynamoDBClient'),
   IRestApiClient: Symbol('IRestApiClient'),
   IEventBridgeClient: Symbol('IEventBridgeClient'),
+  IPaymentAdapter: Symbol('IPaymentAdapter'),
   IOrderCommandHandler: Symbol('IOrderCommandHandler'),
   PaymentApiUrl: Symbol('PaymentApiUrl'),
   OrderTableName: Symbol('OrderTableName'),
