@@ -1,5 +1,5 @@
 import {PutEventsCommand, PutEventsCommandInput, PutEventsCommandOutput} from '@aws-sdk/client-eventbridge';
-import {IEventBridgeClient} from '../interfaces/eventbridge-client.interface';
+import {IEventBridgeClient} from '../../interfaces/eventbridge-client.interface';
 import {EventBridgeClient as EbClient} from '@aws-sdk/client-eventbridge';
 import {injectable} from 'inversify';
 import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';

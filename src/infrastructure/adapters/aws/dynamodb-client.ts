@@ -1,4 +1,4 @@
-import {IDynamoDBClient} from '../interfaces/dynamodb-client.interface';
+import {IDynamoDBClient} from '../../interfaces/dynamodb-client.interface';
 import {injectable} from 'inversify';
 import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {DocumentClient, QueryInput} from 'aws-sdk/clients/dynamodb';
