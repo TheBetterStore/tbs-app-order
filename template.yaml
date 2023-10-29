@@ -29,6 +29,14 @@ Parameters:
 
 Resources:
 
+  StripeSecretKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Stripe secret key
+      Name: !Sub "/${AWS::StackName}/StripeSecretKey"
+      Type: String
+      Value: "TO ADD"
+
   OrderTable:
     Type: AWS::DynamoDB::Table
 #    DeletionPolicy: Retain
@@ -106,6 +114,7 @@ Resources:
         Variables:
           ORDER_TABLE_NAME: !Ref OrderTable
           PAYMENT_API_URL: !Ref PaymentApiUrl
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKey
           TBS_EVENTBUS_ARN:
             Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
       Policies:

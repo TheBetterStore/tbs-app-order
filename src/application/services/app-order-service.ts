@@ -3,7 +3,6 @@ import TYPES from '../../infrastructure/types';
 import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IOrderRepository} from '../../infrastructure/interfaces/order-repository.interface';
 import {IRestApiClient} from '../../infrastructure/interfaces/restapi-client.interface';
-import * as util from 'util';
 import {IAppOrderService} from './app-order-service.interface';
 import {OrderViewModel} from '../viewmodels/order-viewmodel';
 import {ConfirmOrderRequestViewModel} from '../viewmodels/confirm-order-request.viewmodel';
@@ -11,6 +10,7 @@ import {OrderViewModelMapper} from '../mappers/order-viewmodel.mapper';
 import {PutEventsCommandInput} from '@aws-sdk/client-eventbridge';
 import {Order} from '../../domain/entities/order';
 import {IEventBridgeClient} from '../../infrastructure/interfaces/eventbridge-client.interface';
+import {IParameterStoreClient} from '../../infrastructure/interfaces/parameterstore-client.interface';
 
 @injectable()
 /**
@@ -21,24 +21,29 @@ export class AppOrderService implements IAppOrderService {
   private restApiClient: IRestApiClient;
   private paymentApiUrl: String;
   private eventBridgeClient: IEventBridgeClient;
+  private parameterStoreClient: IParameterStoreClient;
   private tbsEventBridgeArn: string;
+  private static stripeSecretKey: string;
 
   /**
    * constructor
    * @param {IRestApiClient} restApiClient
    * @param {string} paymentApiUrl
    * @param {IEventBridgeClient} eventBridgeClient
+   * @param {IParameterStoreClient} parameterStoreClient
    * @param {string} tbsEventBridgeArn
    * @param {IOrderRepository} repo
    */
   constructor(@inject(TYPES.IRestApiClient) restApiClient: IRestApiClient,
               @inject(TYPES.PaymentApiUrl) paymentApiUrl: string,
               @inject(TYPES.IEventBridgeClient) eventBridgeClient: IEventBridgeClient,
+              @inject(TYPES.IParameterStoreClient) parameterStoreClient: IParameterStoreClient,
               @inject(TYPES.TbsEventBusArn) tbsEventBridgeArn: string,
               @inject(TYPES.IOrderRepository) repo: IOrderRepository) {
     this.restApiClient = restApiClient;
     this.paymentApiUrl = paymentApiUrl;
     this.eventBridgeClient= eventBridgeClient;
+    this.parameterStoreClient = parameterStoreClient;
     this.tbsEventBridgeArn = tbsEventBridgeArn;
     this.repo = repo;
   }
@@ -74,22 +79,23 @@ export class AppOrderService implements IAppOrderService {
   async confirmOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
     Logger.info('Entered confirmOrder');
 
-    Logger.info('First, confirming payment with vendor (Stripe)');
+    Logger.info('First, get Stripe secret key if not previously retrieved');
+    if (!AppOrderService.stripeSecretKey) {
+      AppOrderService.stripeSecretKey = await this.parameterStoreClient.getValue(
+          process.env.STRIPE_SECRET_KEY_PARAM || '',
+          true);
+      Logger.debug(`Retrieved key as ${AppOrderService.stripeSecretKey}`);
+    }
 
-    const url = `${this.paymentApiUrl}/payment/v1/payments`;
-    const payload = {
-      tokenId: o.stripeToken,
-      receiptEmail: o.receiptEmail,
-      description: 'Order from The Better Store',
-      chargeAmountInCents: o.netTotal * 100,
-    };
+    const stripe = require('stripe')(AppOrderService.stripeSecretKey);
 
     try {
-      const result = await this.restApiClient.post(url, payload, {});
-      if (result.status > 299) {
-        Logger.error(`Error code ${result.status} was returned, with data: ${util.inspect(result.data)}` );
-        throw new Error(`Could not confirm payment with Stripe; code is ${result.status}`);
-      }
+      const intent = await stripe.paymentIntents.create( {
+        amount: o.netTotal * 100,
+        currency: 'nzd',
+        automatic_payment_methods: {enabled: false},
+      });
+      Logger.debug(intent);
     } catch (e1) {
       throw e1;
     }
