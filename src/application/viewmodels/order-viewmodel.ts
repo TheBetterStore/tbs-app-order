@@ -2,7 +2,7 @@ export interface OrderViewModel {
   customerId: string;
   orderId: string,
   receiptEmail?: string;
-  stripeToken?: string;
+  stripeClientSecret?: string;
   netTotal: number;
   grossTotal: number;
   taxRate: number;

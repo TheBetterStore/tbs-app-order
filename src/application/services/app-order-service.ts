@@ -18,8 +18,6 @@ import {IParameterStoreClient} from '../../infrastructure/interfaces/parameterst
  */
 export class AppOrderService implements IAppOrderService {
   private repo: IOrderRepository;
-  private restApiClient: IRestApiClient;
-  private paymentApiUrl: String;
   private eventBridgeClient: IEventBridgeClient;
   private parameterStoreClient: IParameterStoreClient;
   private tbsEventBridgeArn: string;
@@ -28,23 +26,17 @@ export class AppOrderService implements IAppOrderService {
   /**
    * constructor
    * @param {IRestApiClient} restApiClient
-   * @param {string} paymentApiUrl
    * @param {IEventBridgeClient} eventBridgeClient
    * @param {IParameterStoreClient} parameterStoreClient
-   * @param {string} tbsEventBridgeArn
    * @param {IOrderRepository} repo
    */
   constructor(@inject(TYPES.IRestApiClient) restApiClient: IRestApiClient,
-              @inject(TYPES.PaymentApiUrl) paymentApiUrl: string,
               @inject(TYPES.IEventBridgeClient) eventBridgeClient: IEventBridgeClient,
               @inject(TYPES.IParameterStoreClient) parameterStoreClient: IParameterStoreClient,
-              @inject(TYPES.TbsEventBusArn) tbsEventBridgeArn: string,
               @inject(TYPES.IOrderRepository) repo: IOrderRepository) {
-    this.restApiClient = restApiClient;
-    this.paymentApiUrl = paymentApiUrl;
     this.eventBridgeClient= eventBridgeClient;
     this.parameterStoreClient = parameterStoreClient;
-    this.tbsEventBridgeArn = tbsEventBridgeArn;
+    this.tbsEventBridgeArn = process.env.TBS_EVENTBUS_ARN || '';
     this.repo = repo;
   }
 
@@ -76,8 +68,8 @@ export class AppOrderService implements IAppOrderService {
    * confirmOrder
    * @param {ConfirmOrderRequestViewModel} o
    */
-  async confirmOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
-    Logger.info('Entered confirmOrder');
+  async createOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
+    Logger.info('Entered createOrder');
 
     Logger.info('First, get Stripe secret key if not previously retrieved');
     if (!AppOrderService.stripeSecretKey) {
@@ -89,28 +81,38 @@ export class AppOrderService implements IAppOrderService {
 
     const stripe = require('stripe')(AppOrderService.stripeSecretKey);
 
+    let intent;
     try {
-      const intent = await stripe.paymentIntents.create( {
+      intent = await stripe.paymentIntents.create( {
         amount: o.netTotal * 100,
         currency: 'nzd',
-        automatic_payment_methods: {enabled: false},
+        automatic_payment_methods: {enabled: true},
       });
       Logger.debug(intent);
     } catch (e1) {
       throw e1;
     }
     const order: Order = OrderViewModelMapper.mapToNewOrder(o);
-    const result = await this.createOrder(order);
+    const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
-    Logger.info('Exiting upsertOrder', res);
-    return res;
+    res.stripeClientSecret = intent.client_secret;
+    Logger.info('Exiting createOrder', res);
+    return intent;
+  }
+
+  /**
+   * confirmOrder
+   * @param {any} o
+   */
+  confirmOrder(o: any) {
+    Logger.info('Not implemented');
   }
 
   /**
    * createOrder
    * @param {Order} o
    */
-  async createOrder(o: Order): Promise<Order> {
+  async createOrderRec(o: Order): Promise<Order> {
     Logger.info('Entered createOrder');
     const res: Order = await this.repo.createOrder(o);
     const eventRes = await this.writeEvent(o);

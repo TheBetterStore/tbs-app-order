@@ -22,10 +22,9 @@ export class OrderRepository implements IOrderRepository {
    * @param {IDynamoDBClient} ddbClient
    * @param {string} orderTableName
    */
-  constructor(@inject(TYPES.IDynamoDBClient) ddbClient: IDynamoDBClient,
-              @inject(TYPES.OrderTableName) orderTableName: string) {
+  constructor(@inject(TYPES.IDynamoDBClient) ddbClient: IDynamoDBClient) {
     this.ddbClient = ddbClient;
-    this.orderTableName = orderTableName;
+    this.orderTableName = process.env.ORDER_TABLE_NAME || '';
   }
 
   /**
