@@ -296,6 +296,7 @@ Resources:
           ThrottlingRateLimit: 10
           ThrottlingBurstLimit: 10
           LoggingLevel: ERROR
+          OpenApiVersion: 3.0.1.
       DefinitionBody:
         openapi: "3.0.1"
         info:
@@ -333,6 +334,8 @@ Resources:
                     Access-Control-Allow-Origin:
                       schema:
                         type: "string"
+              security:
+                - TbsUser: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
                 uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateOrderFunction.Arn}:prod/invocations"

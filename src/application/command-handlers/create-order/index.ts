@@ -19,7 +19,7 @@ exports.handler = async (event: APIGatewayEvent, context) => {
   const userClaims: IClaims = event.requestContext.authorizer.claims;
   Logger.debug('Received userClaims:', userClaims);
 
-  //const orderTableName = process.env.ORDER_TABLE_NAME || '';
+  // const orderTableName = process.env.ORDER_TABLE_NAME || '';
 
   // const paymentApiUrl = process.env.PAYMENT_API_URL || '';
 
