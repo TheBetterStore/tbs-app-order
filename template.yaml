@@ -68,8 +68,8 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: src/application/command-handlers/get-orders/index.handler
-      Runtime: nodejs18.x
-      MemorySize: 128
+      Runtime: nodejs22.x
+      MemorySize: 512
       Timeout: 10
       AutoPublishAlias: prod
       Description: Get order functions
@@ -107,8 +107,8 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: src/application/command-handlers/create-order/index.handler
-      Runtime: nodejs18.x
-      MemorySize: 256
+      Runtime: nodejs22.x
+      MemorySize: 512
       Timeout: 10
       AutoPublishAlias: prod
       Description: Create order function
@@ -152,8 +152,8 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: src/application/event-handlers/paymentintent-updated/index.handler
-      Runtime: nodejs18.x
-      MemorySize: 256
+      Runtime: nodejs22.x
+      MemorySize: 512
       Timeout: 10
       AutoPublishAlias: prod
       Description: Confirm order function
@@ -296,7 +296,7 @@ Resources:
           ThrottlingRateLimit: 10
           ThrottlingBurstLimit: 10
           LoggingLevel: ERROR
-          OpenApiVersion: 3.0.1.
+      OpenApiVersion: 3.0.1
       DefinitionBody:
         openapi: "3.0.1"
         info:

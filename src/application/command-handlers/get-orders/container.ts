@@ -10,6 +10,8 @@ import {IEventBridgeClient} from '../../../infrastructure/interfaces/eventbridge
 import {EventBridgeClient} from '../../../infrastructure/adapters/aws/eventbridge-client';
 import {IRestApiClient} from '../../../infrastructure/interfaces/restapi-client.interface';
 import {RestApiClient} from '../../../infrastructure/adapters/restapi-client';
+import {IParameterStoreClient} from "../../../infrastructure/interfaces/parameterstore-client.interface";
+import {ParameterStoreClient} from "../../../infrastructure/adapters/aws/parameterstore-client";
 
 const container = new Container();
 
@@ -17,6 +19,7 @@ container.bind<IOrderRepository>(TYPES.IOrderRepository).to(OrderRepository).inS
 container.bind<IAppOrderService>(TYPES.IAppOrderService).to(AppOrderService).inSingletonScope();
 container.bind<IRestApiClient>(TYPES.IRestApiClient).to(RestApiClient).inSingletonScope();
 container.bind<IEventBridgeClient>(TYPES.IEventBridgeClient).to(EventBridgeClient).inSingletonScope();
+container.bind<IParameterStoreClient>(TYPES.IParameterStoreClient).to(ParameterStoreClient).inSingletonScope();
 container.bind<IDynamoDBClient>(TYPES.IDynamoDBClient).to(DynamoDBClient).inSingletonScope();
 
 export default container;

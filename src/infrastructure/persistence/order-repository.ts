@@ -55,8 +55,9 @@ export class OrderRepository implements IOrderRepository {
       ExpressionAttributeValues: {
         ':cId': customerId,
       },
-      KeyConditionExpression: 'CustomerId = :cId',
+      KeyConditionExpression: 'customerId = :cId',
     };
+    Logger.debug(`Params: ${JSON.stringify(params)}` );
     const res = await this.ddbClient.query(params);
     Logger.info('Exiting OrderRepository.getOrders');
     console.log(res.Items);

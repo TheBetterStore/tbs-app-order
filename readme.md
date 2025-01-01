@@ -9,6 +9,14 @@ The Better Store's Order microservice implementation, using AWS SAM.
 4. GitHub client
 5. Favourite NodeJS IDE (e.g. Jetbrains Webstorm, Visual Studio Code)
 
+Log into GitHub's NPM package manager via the following:
+npm login --scope=@thebetterstore --auth-type=legacy --registry=https://npm.pkg.github.com
+and enter your GitHub userid and classic Personal Access Token with read packages permissions when prompted. e.g. see:
+
+https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages
+
+
+
 ## Deploy the sample application
 
 The Serverless Application Model Command Line Interface (SAM CLI) is an extension of the AWS CLI that adds functionality for building and testing Lambda applications. It uses Docker to run your functions in an Amazon Linux environment that matches Lambda. It can also emulate your application's build environment and API.
