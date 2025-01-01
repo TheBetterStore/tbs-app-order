@@ -4,9 +4,7 @@ const TYPES = {
   IDynamoDBClient: Symbol('IDynamoDBClient'),
   IRestApiClient: Symbol('IRestApiClient'),
   IEventBridgeClient: Symbol('IEventBridgeClient'),
-  PaymentApiUrl: Symbol('PaymentApiUrl'),
-  OrderTableName: Symbol('OrderTableName'),
-  TbsEventBusArn: Symbol('TbsEventBusArn'),
+  IParameterStoreClient: Symbol('IParameterStoreClient'),
 };
 
 export default TYPES;

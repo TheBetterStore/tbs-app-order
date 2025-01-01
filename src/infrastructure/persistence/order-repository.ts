@@ -22,10 +22,9 @@ export class OrderRepository implements IOrderRepository {
    * @param {IDynamoDBClient} ddbClient
    * @param {string} orderTableName
    */
-  constructor(@inject(TYPES.IDynamoDBClient) ddbClient: IDynamoDBClient,
-              @inject(TYPES.OrderTableName) orderTableName: string) {
+  constructor(@inject(TYPES.IDynamoDBClient) ddbClient: IDynamoDBClient) {
     this.ddbClient = ddbClient;
-    this.orderTableName = orderTableName;
+    this.orderTableName = process.env.ORDER_TABLE_NAME || '';
   }
 
   /**
@@ -56,8 +55,9 @@ export class OrderRepository implements IOrderRepository {
       ExpressionAttributeValues: {
         ':cId': customerId,
       },
-      KeyConditionExpression: 'CustomerId = :cId',
+      KeyConditionExpression: 'customerId = :cId',
     };
+    Logger.debug(`Params: ${JSON.stringify(params)}` );
     const res = await this.ddbClient.query(params);
     Logger.info('Exiting OrderRepository.getOrders');
     console.log(res.Items);

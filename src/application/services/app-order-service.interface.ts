@@ -5,5 +5,6 @@ export interface IAppOrderService {
 
   getOrder(orderId: string): Promise<OrderViewModel>;
   getOrders(customerId: string): Promise<OrderViewModel[]>;
-  confirmOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel>;
+  createOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel>;
+  confirmOrder(o: any);
 }
