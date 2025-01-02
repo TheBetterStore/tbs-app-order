@@ -29,20 +29,23 @@ export class OrderRepository implements IOrderRepository {
 
   /**
    * getOrder
+   * @param {string} customerId
    * @param {string} orderId
    * @returns {Promise<Order>}
    */
-  async getOrder(orderId: string): Promise<Order> {
+  async getOrder(customerId: string, orderId: string): Promise<Order> {
     Logger.info('Entered OrderRepository.getOrder');
     const params: DocumentClient.GetItemInput = {
       TableName: this.orderTableName,
       Key: {
-        'OrderId': orderId,
+        'CustomerId': customerId,
+        'OrderId': orderId
       },
     };
     const res = await this.ddbClient.get(params);
-    Logger.info('Exiting OrderRepository.getOrder');
-    return res.Item as Order;
+    Logger.info('Exiting OrderRepository.getOrder');;
+    const order = toOrder(res.Item as OrderDto);
+    return order;
   }
 
   /**
@@ -67,8 +70,6 @@ export class OrderRepository implements IOrderRepository {
       orders = res.Items.map(toOrder as any);
     }
     Logger.info('Exiting OrderRepository.getOrders');
-    // console.log(res.Items);
-    console.log(JSON.stringify(orders, null, 2));
     return orders as Order[];
   }
 
