@@ -5,10 +5,10 @@ import {OrderItemVO} from '../models/order-item.vo';
  */
 export class Order {
   orderId?: string;
-  customerId: string = '';
-  receiptEmail?: string = '';
-  createdTime: string = new Date().toISOString();
-  lastUpdatedTime: string = new Date().toISOString();
+  customerId: string;
+  receiptEmail: string;
+  createdTime: string;
+  lastUpdatedTime: string;
   orderItems: OrderItemVO[] = [];
   taxRate: number = 0.15;
   amountCharged: number = 0;
@@ -19,13 +19,13 @@ export class Order {
    * @param {string} customerId
    * @param {string} receiptEmail
    * @param {OrderItemVO[]} orderItems
-   * @param {string} createdTime
-   * @param {string} lastUpdatedTime
+   * @param {createdTime} createdTime
+   * @param {lastUpdatedTime} lastUpdatedTime
    * @param {number} taxRate
    * @param {number} amountCharged
    */
   constructor(orderId: string, customerId: string, receiptEmail: string, orderItems: OrderItemVO[],
-      createdTime:string, lastUpdatedTime: string, taxRate: number, amountCharged: number) {
+      createdTime: string, lastUpdatedTime: string, taxRate: number, amountCharged: number) {
     this.orderId = orderId;
     this.customerId = customerId;
     this.receiptEmail = receiptEmail;
@@ -38,7 +38,7 @@ export class Order {
 
   /**
    * getNetTotal
-   * @return {number}
+   * @returns {number} NetTotal
    */
   getNetTotal(): number {
     return Order.arrayPropertySum(this.orderItems, 'price');
@@ -46,7 +46,7 @@ export class Order {
 
   /**
    * getGrossTotal
-   * @return {number}
+   * @returns {number} GrossTotal
    */
   getGrossTotal(): number {
     const netTotal = this.getNetTotal();
@@ -56,7 +56,7 @@ export class Order {
 
   /**
    * getTaxTotal
-   * @return {number}
+   * @returns {number} TaxTotal
    */
   getTaxTotal(): number {
     const netTotal = this.getNetTotal();
@@ -67,10 +67,14 @@ export class Order {
    * Returns sum of a specific property's values in an array. NB this must contain numbers only
    * @param {any[]} array
    * @param {string} key
-   * @return {number}
+   * @returns {number} Sum of array property
    * @private
    */
   private static arrayPropertySum(array: any[], key: string) : number {
+    if (!array) {
+      return 0;
+    }
+
     return array.reduce((a, b) => a + (b[key] || 0), 0);
   }
 }

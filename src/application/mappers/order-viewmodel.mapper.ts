@@ -9,23 +9,27 @@ import {Order} from '../../domain/entities/order';
 export class OrderViewModelMapper {
   /**
    * mapToCreateNewOrderCommand
-   * @param {OrderViewModel} vm
-   * @return {CreateOrderCommand}
+   * @param {OrderViewModel} vm View model
+   * @returns {Order} Created order
    */
   public static mapToNewOrder(vm: OrderViewModel): Order {
     const currentTime = new Date();
     const newOrderId = currentTime.getTime().toString(26).toUpperCase();
-    const o = new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems, vm.createdTime,
-        vm.createdTime, vm.taxRate, vm.grossTotal);
-    return o;
+    return new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems,
+        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, vm.grossTotal);
   }
 
   /**
    * mapOrderToOrderVM
-   * @param {Order} o
-   * @return {OrderViewModel}
+   * @param {Order} o Order entity to map
+   * @returns {OrderViewModel} OrderViewModel
    */
   public static mapOrderToOrderVM(o: Order): OrderViewModel {
+    let orderItems: any = [];
+    if (o.orderItems) {
+      orderItems = o.orderItems.map(OrderViewModelMapper.toOrderVMItem);
+    }
+
     const vm: OrderViewModel = {
       orderId: o.orderId || '',
       customerId: o.customerId,
@@ -33,7 +37,7 @@ export class OrderViewModelMapper {
       taxRate: o.taxRate,
       createdTime: o.createdTime,
       lastUpdatedTime: o.lastUpdatedTime,
-      orderItems: o.orderItems.map(OrderViewModelMapper.toOrderVMItem),
+      orderItems: orderItems,
       netTotal: o.getNetTotal(),
       grossTotal: o.getGrossTotal(),
       taxTotal: o.getTaxTotal(),
@@ -45,7 +49,7 @@ export class OrderViewModelMapper {
    * toOrderVMItem
    * @param {OrderItemViewModel} r
    * @private
-   * @return {OrderItemVO}
+   * @returns {OrderItemVO}
    */
   private static toOrderVMItem(r: OrderItemVO): OrderItemViewModel {
     const result: OrderItemViewModel = {
