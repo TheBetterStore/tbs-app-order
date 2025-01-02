@@ -6,8 +6,9 @@ import {IDynamoDBClient} from '../interfaces/dynamodb-client.interface';
 import {DocumentClient} from 'aws-sdk/clients/dynamodb';
 import {InvalidDataError} from '../../domain/models/errors/invalid-data-error';
 import {Order} from '../../domain/entities/order';
-import {OrderDto} from './order.dto';
-const util = require('util');
+import {OrderDto, OrderItemDto} from './order.dto';
+import {OrderItemVO} from "../../domain/models/order-item.vo";
+import util from 'util';
 
 @injectable()
 /**
@@ -20,7 +21,6 @@ export class OrderRepository implements IOrderRepository {
   /**
    * constructor
    * @param {IDynamoDBClient} ddbClient
-   * @param {string} orderTableName
    */
   constructor(@inject(TYPES.IDynamoDBClient) ddbClient: IDynamoDBClient) {
     this.ddbClient = ddbClient;
@@ -30,13 +30,14 @@ export class OrderRepository implements IOrderRepository {
   /**
    * getOrder
    * @param {string} orderId
+   * @returns {Promise<Order>}
    */
   async getOrder(orderId: string): Promise<Order> {
     Logger.info('Entered OrderRepository.getOrder');
     const params: DocumentClient.GetItemInput = {
       TableName: this.orderTableName,
       Key: {
-        'orderId': orderId,
+        'OrderId': orderId,
       },
     };
     const res = await this.ddbClient.get(params);
@@ -47,6 +48,7 @@ export class OrderRepository implements IOrderRepository {
   /**
    * getOrders
    * @param {string} customerId
+   * @returns {Promise<Order[]>}
    */
   async getOrders(customerId: string): Promise<Order[]> {
     Logger.info('Entered OrderRepository.getOrders');
@@ -55,18 +57,25 @@ export class OrderRepository implements IOrderRepository {
       ExpressionAttributeValues: {
         ':cId': customerId,
       },
-      KeyConditionExpression: 'customerId = :cId',
+      KeyConditionExpression: 'CustomerId = :cId',
     };
     Logger.debug(`Params: ${JSON.stringify(params)}` );
     const res = await this.ddbClient.query(params);
+    Logger.debug(`Received response from DB: ${JSON.stringify(res.Items)}` );
+    let orders: Order[] = [];
+    if (res.Items) {
+      orders = res.Items.map(toOrder as any);
+    }
     Logger.info('Exiting OrderRepository.getOrders');
-    console.log(res.Items);
-    return res.Items as Order[];
+    // console.log(res.Items);
+    console.log(JSON.stringify(orders, null, 2));
+    return orders as Order[];
   }
 
   /**
    * create
    * @param {Order} o
+   * @returns {Promise<Order>}
    */
   async createOrder(o: Order): Promise<Order> {
     Logger.info('Entered OrderRepository.save');
@@ -86,6 +95,7 @@ export class OrderRepository implements IOrderRepository {
   /**
    * update
    * @param {Order} p
+   * @returns {Promise<Order>}
    */
   async updateOrder(p: Order): Promise<Order> {
     Logger.info('Entered OrderRepository.update');
@@ -111,34 +121,59 @@ export class OrderRepository implements IOrderRepository {
   /**
    * toDto
    * @param {Order} o
-   * @return {OrderDto}
+   * @returns {OrderDto}
    */
   static toDto(o: Order): OrderDto {
     const d: OrderDto = {
-      orderId: o.orderId,
-      customerId: o.customerId,
-      receiptEmail: o.receiptEmail,
-      orderItems: o.orderItems,
-      createdTime: o.createdTime,
-      lastUpdatedTime: o.lastUpdatedTime,
-      taxRate: o.taxRate,
-      amountCharged: o.amountCharged,
-      taxTotal: o.getTaxTotal(),
-      netTotal: o.getNetTotal(),
-      grossTotal: o.getGrossTotal(),
+      OrderId: o.orderId,
+      CustomerId: o.customerId,
+      ReceiptEmail: o.receiptEmail,
+      OrderItems: o.orderItems.map(toOrderItemDto),
+      CreatedTime: o.createdTime,
+      LastUpdatedTime: o.lastUpdatedTime,
+      TaxRate: o.taxRate,
+      AmountCharged: o.amountCharged,
+      TaxTotal: o.getTaxTotal(),
+      NetTotal: o.getNetTotal(),
+      GrossTotal: o.getGrossTotal(),
     };
     return d;
   }
+}
 
-  /**
-   * toOrder
-   * @param {OrderDto} o
-   * @return {Order}
-   */
-  static toOrder(o: OrderDto): Order {
-    const d: Order = new Order(o.orderId || '', o.customerId, o.receiptEmail || '',
-        o.orderItems, o.createdTime,
-        o.lastUpdatedTime, o.taxRate, o.amountCharged);
-    return d;
-  }
+/**
+ * toOrder
+ * @param {OrderDto} o
+ * @returns {Order}
+ */
+function toOrder(o: OrderDto): Order {
+  const d: Order = new Order(o.OrderId || '', o.CustomerId, o.ReceiptEmail || '',
+      o.OrderItems.map(toOrderItemVO as any), o.CreatedTime,
+      o.LastUpdatedTime, o.TaxRate, o.AmountCharged);
+  return d;
+}
+
+/**
+ * toOrderItemDto
+ * @param {OrderItemVO} o
+ * @returns {OrderItemDto}
+ */
+function toOrderItemDto(o: OrderItemVO): OrderItemDto {
+  const d: OrderItemDto = {
+    Quantity: o.quantity,
+    ProductId: o.productId,
+    ProductName: o.productName,
+    Price: o.price,
+  };
+  return d;
+}
+
+function toOrderItemVO(o: OrderItemDto): OrderItemVO {
+  const d: OrderItemVO = {
+    quantity: o.Quantity,
+    productId: o.ProductId,
+    productName: o.ProductName,
+    price: o.Price,
+  };
+  return d;
 }

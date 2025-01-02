@@ -43,6 +43,7 @@ export class AppOrderService implements IAppOrderService {
   /**
    * getOrder
    * @param {string} orderId
+   * @returns {Promise}
    */
   async getOrder(orderId: string): Promise<OrderViewModel> {
     Logger.info('Entered getOrder');
@@ -55,10 +56,12 @@ export class AppOrderService implements IAppOrderService {
   /**
    * getOrders
    * @param {string} customerId
+   * @returns {Promise}
    */
   async getOrders(customerId: string): Promise<OrderViewModel[]> {
     Logger.info('Entered getOrders');
     const p = await this.repo.getOrders(customerId);
+    Logger.debug('Retrieved orders from DB: ' + JSON.stringify(p, null, 2));
     const vm = p.map(OrderViewModelMapper.mapOrderToOrderVM);
     Logger.info('Exiting getOrders');
     return vm;
@@ -67,18 +70,20 @@ export class AppOrderService implements IAppOrderService {
   /**
    * confirmOrder
    * @param {ConfirmOrderRequestViewModel} o
+   * @returns {Promise}
    */
   async createOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
-    Logger.info('Entered createOrder');
+    Logger.info('Entered AppOrderService.createOrder');
 
     Logger.info('First, get Stripe secret key if not previously retrieved');
     if (!AppOrderService.stripeSecretKey) {
       AppOrderService.stripeSecretKey = await this.parameterStoreClient.getValue(
           process.env.STRIPE_SECRET_KEY_PARAM || '',
           true);
-      Logger.debug(`Retrieved key as ${AppOrderService.stripeSecretKey}`);
+      // Logger.debug(`Retrieved key as ${AppOrderService.stripeSecretKey}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const stripe = require('stripe')(AppOrderService.stripeSecretKey);
 
     let intent;
@@ -93,6 +98,7 @@ export class AppOrderService implements IAppOrderService {
       throw e1;
     }
     const order: Order = OrderViewModelMapper.mapToNewOrder(o);
+    Logger.info('Created new order:', JSON.stringify(order, null, 2) );
     const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
     res.stripeClientSecret = intent.client_secret;
@@ -105,15 +111,16 @@ export class AppOrderService implements IAppOrderService {
    * @param {any} o
    */
   confirmOrder(o: any) {
-    Logger.info('Not implemented');
+    Logger.info('Not implemented', o);
   }
 
   /**
    * createOrder
    * @param {Order} o
+   * @returns {Promise}
    */
   async createOrderRec(o: Order): Promise<Order> {
-    Logger.info('Entered createOrder');
+    Logger.info('Entered AppOrderService.createOrderRec');
     const res: Order = await this.repo.createOrder(o);
     const eventRes = await this.writeEvent(o);
     Logger.debug('Write event result:', JSON.stringify(eventRes));
@@ -124,6 +131,7 @@ export class AppOrderService implements IAppOrderService {
   /**
    * writeEvent
    * @param {Order} o
+   * @returns {Promise}
    */
   async writeEvent(o: Order) {
     const event= JSON.stringify(

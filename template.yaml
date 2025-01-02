@@ -47,14 +47,14 @@ Resources:
 #    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
-        - AttributeName: "customerId"
+        - AttributeName: "CustomerId"
           AttributeType: "S"
-        - AttributeName: "orderId"
+        - AttributeName: "OrderId"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "customerId"
+        - AttributeName: "CustomerId"
           KeyType: "HASH"
-        - AttributeName: "orderId"
+        - AttributeName: "OrderId"
           KeyType: "RANGE"
       BillingMode: PAY_PER_REQUEST
 #      ProvisionedThroughput:

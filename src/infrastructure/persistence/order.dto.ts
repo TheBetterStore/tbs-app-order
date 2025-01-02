@@ -1,15 +1,23 @@
-import {OrderItemVO} from '../../domain/models/order-item.vo';
-
+/**
+ * OrderDto
+ */
 export interface OrderDto {
-  customerId: string;
-  orderId?: string,
-  receiptEmail?: string;
-  amountCharged: number;
-  netTotal: number;
-  grossTotal: number;
-  taxRate: number;
-  taxTotal: number;
-  orderItems: OrderItemVO[];
-  createdTime: string;
-  lastUpdatedTime: string;
+  CustomerId: string;
+  OrderId?: string,
+  ReceiptEmail?: string;
+  AmountCharged: number;
+  NetTotal: number;
+  GrossTotal: number;
+  TaxRate: number;
+  TaxTotal: number;
+  OrderItems: OrderItemDto[];
+  CreatedTime: string;
+  LastUpdatedTime: string;
+}
+
+export interface OrderItemDto {
+  Quantity: number;
+  ProductId: string;
+  ProductName: string;
+  Price: number;
 }
