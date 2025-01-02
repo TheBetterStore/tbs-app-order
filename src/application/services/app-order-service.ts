@@ -43,12 +43,13 @@ export class AppOrderService implements IAppOrderService {
 
   /**
    * getOrder
+   * @param {string} customerId
    * @param {string} orderId
    * @returns {Promise}
    */
-  async getOrder(orderId: string): Promise<OrderViewModel> {
+  async getOrder(customerId: string, orderId: string): Promise<OrderViewModel> {
     Logger.info('Entered getOrder');
-    const result = await this.repo.getOrder(orderId);
+    const result = await this.repo.getOrder(customerId, orderId);
     const vm = OrderViewModelMapper.mapOrderToOrderVM(result);
     Logger.info('Exiting getOrder');
     return vm;
@@ -62,7 +63,6 @@ export class AppOrderService implements IAppOrderService {
   async getOrders(customerId: string): Promise<OrderViewModel[]> {
     Logger.info('Entered getOrders');
     const p = await this.repo.getOrders(customerId);
-    Logger.debug('Retrieved orders from DB: ' + JSON.stringify(p, null, 2));
     const vm = p.map(OrderViewModelMapper.mapOrderToOrderVM);
     Logger.info('Exiting getOrders');
     return vm;
@@ -94,12 +94,10 @@ export class AppOrderService implements IAppOrderService {
         currency: 'nzd',
         automatic_payment_methods: {enabled: true},
       });
-      Logger.debug(JSON.stringify(intent, null, 2));
     } catch (e1) {
       throw e1;
     }
     const order: Order = OrderViewModelMapper.mapToNewOrder(o);
-    Logger.info('Created new order:', JSON.stringify(order, null, 2) );
     const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
 
