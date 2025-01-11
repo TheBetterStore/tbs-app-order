@@ -19,17 +19,31 @@ Parameters:
   AppLoginCFName:
     Type: String
 
+  GetOrdersReservedConcurrency:
+    Type: String
+    Default: 2
+
   CreateOrderReservedConcurrency:
     Type: String
-    Default: 10
+    Default: 2
 
   PaymentIntentUpdatedReservedConcurrency:
     Type: String
-    Default: 1
+    Default: 2
 
   PaymentApiUrl:
     Type: String
     Default: https://api.thebetterstore.net
+
+  AppLoggingLevel:
+    Type: String
+    AllowedValues: [TRACE, DEBUG, INFO, WARN, ERROR, FATAL]
+    Default: INFO
+
+  SystemLogLevel:
+    Type: String
+    AllowedValues: [DEBUG, INFO, WARN]
+    Default: INFO
 
 Resources:
 
@@ -75,6 +89,14 @@ Resources:
       Description: Get order functions
       Tracing: Active
       # Role: !GetAtt LambdaExcecutionRole.Arn
+      DeploymentPreference:
+        Type: AllAtOnce
+      ReservedConcurrentExecutions: !Ref GetOrdersReservedConcurrency
+      LoggingConfig:
+        LogGroup: !Ref GetOrdersFunctionLogs
+        LogFormat: JSON
+        ApplicationLogLevel: !Ref AppLoggingLevel
+        SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
           ORDER_TABLE_NAME: !Ref OrderTable
@@ -96,10 +118,11 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - src/application/command-handlers/get-orders/index.ts
+
   GetOrdersFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", !Ref GetOrdersFunction ] ]
+      LogGroupName: !Join [ "", [ "/aws/lambda/", GetOrdersFunction ] ]
       RetentionInDays: 365
 
   CreateOrderFunction:
@@ -113,7 +136,14 @@ Resources:
       AutoPublishAlias: prod
       Description: Create order function
       Tracing: Active
+      DeploymentPreference:
+        Type: AllAtOnce
       ReservedConcurrentExecutions: !Sub ${CreateOrderReservedConcurrency}
+      LoggingConfig:
+        LogGroup: !Ref CreateOrderFunctionLogs
+        LogFormat: JSON
+        ApplicationLogLevel: !Ref AppLoggingLevel
+        SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
           ORDER_TABLE_NAME: !Ref OrderTable
@@ -144,7 +174,7 @@ Resources:
   CreateOrderFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", !Ref CreateOrderFunction ] ]
+      LogGroupName: !Join [ "", [ "/aws/lambda/", CreateOrderFunction ] ]
       RetentionInDays: 365
 
   PaymentIntentUpdatedFunction:
@@ -158,7 +188,14 @@ Resources:
       AutoPublishAlias: prod
       Description: Confirm order function
       Tracing: Active
+      DeploymentPreference:
+        Type: AllAtOnce
       ReservedConcurrentExecutions: !Sub ${PaymentIntentUpdatedReservedConcurrency}
+      LoggingConfig:
+        LogGroup: !Ref PaymentIntentUpdatedFunctionLogs
+        LogFormat: JSON
+        ApplicationLogLevel: !Ref AppLoggingLevel
+        SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
           ORDER_TABLE_NAME: !Ref OrderTable
@@ -196,7 +233,7 @@ Resources:
   PaymentIntentUpdatedFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", !Ref PaymentIntentUpdatedFunction ] ]
+      LogGroupName: !Join [ "", [ "/aws/lambda/", PaymentIntentUpdatedFunction ] ]
       RetentionInDays: 365
 
   ApiGwExecutionLogs:
