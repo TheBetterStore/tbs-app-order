@@ -1,10 +1,9 @@
 import {OrderViewModel} from '../viewmodels/order-viewmodel';
-import {ConfirmOrderRequestViewModel} from '../viewmodels/confirm-order-request.viewmodel';
 
 export interface IAppOrderService {
 
   getOrder(customerId: string, orderId: string): Promise<OrderViewModel>;
   getOrders(customerId: string): Promise<OrderViewModel[]>;
-  createOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel>;
+  createOrder(o: OrderViewModel): Promise<OrderViewModel>;
   confirmOrder(o: any);
 }

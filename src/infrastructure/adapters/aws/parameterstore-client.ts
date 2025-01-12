@@ -13,9 +13,10 @@ export class ParameterStoreClient implements IParameterStoreClient {
    * getValue
    * @param {string} key
    * @param {boolean} withDecryption
+   * @returns {Promise<any>}
    */
   async getValue(key: string, withDecryption: boolean): Promise<any> {
-    Logger.info('Entered ParameterStoreClient.send()');
+    Logger.info('Entered ParameterStoreClient.getValue()');
 
     const params: GetParameterCommandInput = {
       Name: key,

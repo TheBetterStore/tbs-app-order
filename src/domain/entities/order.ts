@@ -41,7 +41,7 @@ export class Order {
    * @returns {number} NetTotal
    */
   getNetTotal(): number {
-    return Order.arrayPropertySum(this.orderItems, 'price');
+    return Order.arrayPropertySum(this.orderItems, 'Price');
   }
 
   /**

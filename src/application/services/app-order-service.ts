@@ -5,7 +5,6 @@ import {IOrderRepository} from '../../infrastructure/interfaces/order-repository
 import {IRestApiClient} from '../../infrastructure/interfaces/restapi-client.interface';
 import {IAppOrderService} from './app-order-service.interface';
 import {OrderViewModel} from '../viewmodels/order-viewmodel';
-import {ConfirmOrderRequestViewModel} from '../viewmodels/confirm-order-request.viewmodel';
 import {OrderViewModelMapper} from '../mappers/order-viewmodel.mapper';
 import {PutEventsCommandInput} from '@aws-sdk/client-eventbridge';
 import {Order} from '../../domain/entities/order';
@@ -69,11 +68,12 @@ export class AppOrderService implements IAppOrderService {
   }
 
   /**
-   * confirmOrder
-   * @param {ConfirmOrderRequestViewModel} o
+   * createOrder; Initialise customer order, create Strip PaymentIntent, and return this to the client if no errors to
+   * allow payment to be confirmed
+   * @param {OrderViewModel} o
    * @returns {Promise}
    */
-  async createOrder(o: ConfirmOrderRequestViewModel): Promise<OrderViewModel> {
+  async createOrder(o: OrderViewModel): Promise<OrderViewModel> {
     Logger.info('Entered AppOrderService.createOrder');
 
     Logger.info('First, get Stripe secret key if not previously retrieved');
@@ -90,7 +90,7 @@ export class AppOrderService implements IAppOrderService {
     let intent: PaymentIntentResult;
     try {
       intent = await stripe.paymentIntents.create( {
-        amount: o.netTotal * 100,
+        amount: Math.floor(o.netTotal * 100), // Converts to cents and truncate any floating-point digits
         currency: 'nzd',
         automatic_payment_methods: {enabled: true},
       });
@@ -107,7 +107,7 @@ export class AppOrderService implements IAppOrderService {
   }
 
   /**
-   * confirmOrder
+   * confirmOrder Stripe callback
    * @param {any} o
    */
   confirmOrder(o: any) {
@@ -122,8 +122,8 @@ export class AppOrderService implements IAppOrderService {
   async createOrderRec(o: Order): Promise<Order> {
     Logger.info('Entered AppOrderService.createOrderRec');
     const res: Order = await this.repo.createOrder(o);
-    const eventRes = await this.writeEvent(o);
-    Logger.debug('Write event result:', JSON.stringify(eventRes));
+    // const eventRes = await this.writeEvent(o);
+    // Logger.debug('Write event result:', JSON.stringify(eventRes));
     Logger.info('Exiting createOrder', res);
     return res;
   }
