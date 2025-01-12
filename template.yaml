@@ -81,7 +81,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/application/command-handlers/get-orders/index.handler
+      Handler: index.handler
       Runtime: nodejs22.x
       MemorySize: 512
       Timeout: 10
@@ -129,7 +129,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/application/command-handlers/create-order/index.handler
+      Handler: index.handler
       Runtime: nodejs22.x
       MemorySize: 512
       Timeout: 10
@@ -181,7 +181,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
-      Handler: src/application/event-handlers/paymentintent-updated/index.handler
+      Handler: index.handler
       Runtime: nodejs22.x
       MemorySize: 512
       Timeout: 10
@@ -228,7 +228,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - src/application/command-handlers/confirm-order/index.ts
+          - src/application/event-handlers/paymentintent-updated/index.ts
 
   PaymentIntentUpdatedFunctionLogs:
     Type: AWS::Logs::LogGroup
@@ -590,3 +590,39 @@ Outputs:
     Value: !Ref OrderApi
     Export:
       Name: !Sub '${AWS::StackName}:OrderApiId'
+
+  PaymentIntentUpdatedEventQueueName:
+    Description: Queue Name
+    Value: !GetAtt PaymentIntentUpdatedEventQueue.QueueName
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventQueue:Name'
+
+  PaymentIntentUpdatedEventQueueArn:
+    Description: Queue Arn
+    Value: !GetAtt PaymentIntentUpdatedEventQueue.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventQueue:Arn'
+
+  PaymentIntentUpdatedEventQueueUrl:
+    Description: Queue Url
+    Value: !Ref PaymentIntentUpdatedEventQueue
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventQueue:Url'
+
+  PaymentIntentUpdatedEventDLQName:
+    Description: Queue Name
+    Value: !GetAtt PaymentIntentUpdatedEventDLQ.QueueName
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventDLQ:Name'
+
+  PaymentIntentUpdatedEventDLQArn:
+    Description: Queue Arn
+    Value: !GetAtt PaymentIntentUpdatedEventDLQ.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventDLQ:Arn'
+
+  PaymentIntentUpdatedEventDLQUrl:
+    Description: Queue Url
+    Value: !Ref PaymentIntentUpdatedEventDLQ
+    Export:
+      Name: !Sub '${AWS::StackName}:PaymentIntentUpdatedEventDLQ:Url'

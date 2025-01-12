@@ -1,0 +1,22 @@
+[
+  {
+    "AmountCharged": 1551.4347826086957,
+    "NetTotal": "01784.15",
+    "CreatedTime": "2025-01-01T23:09:43.495Z",
+    "ReceiptEmail": "brycepc@hotmail.com",
+    "OrderItems": [
+      {
+        "Quantity": 1,
+        "ProductId": "2b6249ac-b50b-5673-94cb-80419307b89a",
+        "ProductName": "Samsung Galaxy Z Flip 6",
+        "Price": "1784.15"
+      }
+    ],
+    "TaxTotal": 267.6225,
+    "LastUpdatedTime": "2025-01-01T23:09:43.495Z",
+    "GrossTotal": 1516.5275000000001,
+    "CustomerId": "f7bb5648-a72b-4b48-a04b-8edb5ea05ec1",
+    "TaxRate": 0.15,
+    "OrderId": "882NNL414"
+  }
+]

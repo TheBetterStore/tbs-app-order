@@ -16,7 +16,7 @@ export class OrderViewModelMapper {
     const currentTime = new Date();
     const newOrderId = currentTime.getTime().toString(26).toUpperCase();
     return new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems,
-        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, vm.grossTotal);
+        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, (Math.floor(vm.grossTotal * 100)) / 100);
   }
 
   /**
