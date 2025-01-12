@@ -352,10 +352,18 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
                 credentials: !GetAtt ApiGWToSQSRole.Arn
-                uri: !Sub "arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${PaymentIntentUpdatedEventQueue}"
+                uri:
+                  Fn::Join:
+                    - ''
+                    - - !Sub "arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/"
+                      - !GetAtt PaymentIntentUpdatedEventQueue.QueueName
                 responses:
                   default:
                     statusCode: "200"
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+                requestTemplates:
+                  application/json: "Action=SendMessage&MessageBody=$input.body"
                 passthroughBehavior: "never"
                 type: "aws"
 
