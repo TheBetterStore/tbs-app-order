@@ -79,7 +79,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order>}
    */
   async createOrder(o: Order): Promise<Order> {
-    Logger.info('Entered OrderRepository.save');
+    Logger.info('Entered OrderRepository.createOrder');
     const dto = OrderRepository.toDto(o);
     const params: DocumentClient.PutItemInput = {
       TableName: this.orderTableName,
@@ -89,7 +89,7 @@ export class OrderRepository implements IOrderRepository {
 
     const res = await this.ddbClient.put(params);
     console.log(util.inspect(res));
-    Logger.info('Exiting OrderRepository.upsertOrder');
+    Logger.info('Exiting OrderRepository.createOrder');
     return o;
   }
 
@@ -99,7 +99,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order>}
    */
   async updateOrder(p: Order): Promise<Order> {
-    Logger.info('Entered OrderRepository.update');
+    Logger.info('Entered OrderRepository.updateOrder');
     const currentTime = new Date();
     if (!p.orderId) {
       // Generate a random string - adding a random int to help prevent ms clash
@@ -115,7 +115,7 @@ export class OrderRepository implements IOrderRepository {
 
     const res = await this.ddbClient.put(params);
     console.log(util.inspect(res));
-    Logger.info('Exiting OrderRepository.upsertOrder');
+    Logger.info('Exiting OrderRepository.updateOrder');
     return p;
   }
 

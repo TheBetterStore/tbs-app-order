@@ -122,8 +122,8 @@ export class AppOrderService implements IAppOrderService {
   async createOrderRec(o: Order): Promise<Order> {
     Logger.info('Entered AppOrderService.createOrderRec');
     const res: Order = await this.repo.createOrder(o);
-    const eventRes = await this.writeEvent(o);
-    Logger.debug('Write event result:', JSON.stringify(eventRes));
+    // const eventRes = await this.writeEvent(o);
+    // Logger.debug('Write event result:', JSON.stringify(eventRes));
     Logger.info('Exiting createOrder', res);
     return res;
   }

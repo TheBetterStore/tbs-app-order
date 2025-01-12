@@ -2,6 +2,7 @@
 import {OrderItemViewModel, OrderViewModel} from '../viewmodels/order-viewmodel';
 import {OrderItemVO} from '../../domain/models/order-item.vo';
 import {Order} from '../../domain/entities/order';
+import {Logger} from "@thebetterstore/tbs-lib-infra-common/lib/logger";
 
 /**
  * OrderViewModelMapper
@@ -14,9 +15,11 @@ export class OrderViewModelMapper {
    */
   public static mapToNewOrder(vm: OrderViewModel): Order {
     const currentTime = new Date();
+    const amountCharged = Math.floor(vm.grossTotal * 100) / 100;
+    Logger.debug(`Amount charged: ${amountCharged}`);
     const newOrderId = currentTime.getTime().toString(26).toUpperCase();
     return new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems,
-        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, (Math.floor(vm.grossTotal * 100)) / 100);
+        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, amountCharged);
   }
 
   /**
