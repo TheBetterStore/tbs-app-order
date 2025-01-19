@@ -19,7 +19,7 @@ export class OrderViewModelMapper {
     Logger.debug(`Amount charged: ${amountCharged}`);
     const newOrderId = currentTime.getTime().toString(26).toUpperCase();
     return new Order(newOrderId, vm.customerId, vm.receiptEmail || '', vm.orderItems,
-        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, amountCharged);
+        currentTime.toISOString(), currentTime.toISOString(), vm.taxRate, amountCharged, 'INITIAL');
   }
 
   /**

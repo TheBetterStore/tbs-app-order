@@ -100,16 +100,19 @@ export class OrderRepository implements IOrderRepository {
    */
   async updateOrder(p: Order): Promise<Order> {
     Logger.info('Entered OrderRepository.updateOrder');
+
     const currentTime = new Date();
     if (!p.orderId) {
       // Generate a random string - adding a random int to help prevent ms clash
-      throw new InvalidDataError('Order ID is not provide on order object for updating');
+      throw new InvalidDataError('Order ID is not provided on order object for updating');
     }
     p.lastUpdatedTime = currentTime.toISOString();
 
+    const dto = OrderRepository.toDto(p);
+
     const params: DocumentClient.PutItemInput = {
       TableName: this.orderTableName,
-      Item: p,
+      Item: dto,
       ReturnValues: 'ALL_OLD',
     };
 
@@ -138,6 +141,10 @@ export class OrderRepository implements IOrderRepository {
       TaxTotal: o.getTaxTotal(),
       NetTotal: o.getNetTotal(),
       GrossTotal: o.getGrossTotal(),
+      StripePaymentIntent: {
+        Id: o.stripePaymentIntent.id,
+        Status: o.stripePaymentIntent.status,
+      }
     };
     return d;
   }
@@ -152,6 +159,8 @@ function toOrder(o: OrderDto): Order {
   const d: Order = new Order(o.OrderId || '', o.CustomerId, o.ReceiptEmail || '',
       o.OrderItems.map(toOrderItemVO as any), o.CreatedTime,
       o.LastUpdatedTime, o.TaxRate, o.AmountCharged, o.Status);
+  d.stripePaymentIntent.id = o.StripePaymentIntent.Id;
+  d.stripePaymentIntent.status = o.StripePaymentIntent.Status;
   return d;
 }
 

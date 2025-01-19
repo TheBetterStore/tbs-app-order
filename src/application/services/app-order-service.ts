@@ -96,7 +96,8 @@ export class AppOrderService implements IAppOrderService {
         currency: 'nzd',
         automatic_payment_methods: {enabled: true},
         receipt_email: order.receiptEmail,
-        matadata: {
+        metadata: {
+          customerId: order.customerId,
           orderId: order.orderId
         }
       });
@@ -105,7 +106,7 @@ export class AppOrderService implements IAppOrderService {
     }
 
     order.stripePaymentIntent.id = intent?.paymentIntent?.id;
-    order.stripePaymentIntent.Status = intent?.paymentIntent?.status;
+    order.stripePaymentIntent.status = intent?.paymentIntent?.status;
 
     const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
@@ -116,11 +117,28 @@ export class AppOrderService implements IAppOrderService {
   }
 
   /**
-   * confirmOrder Stripe callback
-   * @param {any} o
+   * confirmOrder via Stripe callback
+   * @param {string} customerId
+   * @param {string} orderId
+   * @param {string} status
    */
-  confirmOrder(o: any) {
-    Logger.info('Not implemented', o);
+  async confirmOrder(customerId: string, orderId: string, status: string) {
+
+    const order = await this.repo.getOrder(customerId, orderId);
+    order.stripePaymentIntent.status = status;
+    order.status = 'PAID'
+    await this.repo.updateOrder(order);
+
+    const params: PutEventsCommandInput = {
+      Entries: [{
+        Source: 'tbs-app-order.AppOrderService',
+        Detail: JSON.stringify(order),
+        DetailType: 'StripeWebhookEvent',
+        EventBusName: this.tbsEventBridgeArn,
+      }],
+    };
+    Logger.debug(`Writing event with params:`, JSON.stringify(params));
+    return this.eventBridgeClient.send(params);
   }
 
   /**
@@ -130,39 +148,11 @@ export class AppOrderService implements IAppOrderService {
    */
   async createOrderRec(o: Order): Promise<Order> {
     Logger.info('Entered AppOrderService.createOrderRec');
+    Logger.debug('Writing order rec:', JSON.stringify(o));
     const res: Order = await this.repo.createOrder(o);
     // const eventRes = await this.writeEvent(o);
     // Logger.debug('Write event result:', JSON.stringify(eventRes));
     Logger.info('Exiting createOrder', res);
     return res;
-  }
-
-  /**
-   * writeEvent
-   * @param {Order} o
-   * @returns {Promise}
-   */
-  async writeEvent(o: Order) {
-    const event= JSON.stringify(
-        {
-          orderId: o.orderId,
-          customerId: o.customerId,
-          orderItems: o.orderItems,
-          taxRate: o.taxRate,
-          chargeTotal: o.amountCharged,
-        });
-    Logger.debug(event);
-
-    // Send event for interested parties
-    const params: PutEventsCommandInput = {
-      Entries: [{
-        Source: 'tbs-app-order.OrderCommandHandler',
-        Detail: event,
-        DetailType: 'OrderCreatedEvent',
-        EventBusName: this.tbsEventBridgeArn,
-      }],
-    };
-    Logger.debug(`Writing event with params:`, JSON.stringify(params));
-    return this.eventBridgeClient.send(params);
   }
 }
