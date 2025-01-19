@@ -4,18 +4,13 @@ import container from './container';
 import {SQSEvent} from 'aws-lambda';
 import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IStripePaymentIntentEvent} from "../../../infrastructure/interfaces/stripe-payment-intent-event";
-import {PutEventsCommandInput} from "@aws-sdk/client-eventbridge";
-import {IEventBridgeClient} from "../../../infrastructure/interfaces/eventbridge-client.interface";
 import {IAppOrderService} from "../../services/app-order-service.interface";
-
-const tbsEventBridgeArn = process.env.TBS_EVENTBUS_ARN || '';
 
 console.log('INFO - lambda is cold-starting.');
 exports.handler = async (event: SQSEvent) => {
   Logger.info('Entered confirm-order handler', event);
 
   const svc = container.get<IAppOrderService>(TYPES.IAppOrderService);
-  const ebSvc = container.get<IEventBridgeClient>(TYPES.IEventBridgeClient);
 
   const recs = event.Records;
   for(let i = 0; i < recs.length; i++) {
@@ -23,14 +18,6 @@ exports.handler = async (event: SQSEvent) => {
 
     Logger.debug(rec.body);
     const o: IStripePaymentIntentEvent = JSON.parse(rec.body);
-
-    if(o?.data?.object?.object != "payment_intent") {
-      throw new Error("Invalid object type received");
-    }
-
-    if(o.data.object.status == 'succeeded') {
-      await svc.confirmOrder(o);
-    }
 
     const mappedEvent: IStripePaymentIntentEvent = {
       id: o.id,
@@ -58,16 +45,15 @@ exports.handler = async (event: SQSEvent) => {
       type: o.type
     }
 
-    const params: PutEventsCommandInput = {
-      Entries: [{
-        Source: 'tbs-app-order.OrderCommandHandler',
-        Detail: JSON.stringify(mappedEvent),
-        DetailType: 'StripeWebhookEvent',
-        EventBusName: tbsEventBridgeArn,
-      }],
-    };
-    Logger.debug(`Writing event with params:`, JSON.stringify(params));
-    return ebSvc.send(params);
+    Logger.debug(`Received event type: ${mappedEvent?.type}`);
+
+    switch(mappedEvent?.type) {
+      case 'payment_intent.succeeded':
+        const customerId = mappedEvent?.data?.object?.metadata.customerId;
+        const orderId = mappedEvent?.data?.object?.metadata.orderId;
+        await svc.confirmOrder(customerId, orderId,  mappedEvent.data.object.status);
+        break;
+    }
   }
   Logger.info('Exiting handler');
 };

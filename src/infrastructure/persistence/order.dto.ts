@@ -14,6 +14,7 @@ export interface OrderDto {
   CreatedTime: string;
   LastUpdatedTime: string;
   Status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED';
+  StripePaymentIntent: StripePaymentIntentDto;
 }
 
 export interface OrderItemDto {
@@ -21,4 +22,9 @@ export interface OrderItemDto {
   ProductId: string;
   ProductName: string;
   Price: number;
+}
+
+export interface StripePaymentIntentDto {
+  Id: string;
+  Status: string;
 }
