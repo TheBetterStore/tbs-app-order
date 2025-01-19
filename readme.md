@@ -49,16 +49,6 @@ tbs-app-order$ sam logs -n HelloWorldFunction --stack-name tbs-app-order --tail
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
 
-## Unit tests
-
-Tests are defined in the `hello-world/tests` folder in this project. Use NPM to install the [Jest test framework](https://jestjs.io/) and run unit tests.
-
-```bash
-tbs-app-order$ cd tbs-app-order
-hello-world$ npm install
-hello-world$ npm run test
-```
-
 ## Resources
 
 1. [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) for an introduction to SAM specification, the SAM CLI, and serverless application concepts.
