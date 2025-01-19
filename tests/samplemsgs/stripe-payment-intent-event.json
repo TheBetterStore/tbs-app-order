@@ -1,0 +1,84 @@
+{
+  "id": "evt_3QgMxCFPlXRs14xe02tv39wC",
+  "object": "event",
+  "api_version": "2024-12-18.acacia",
+  "created": 1736672132,
+  "data": {
+    "object": {
+      "id": "pi_3QgMxCFPlXRs14xe08ui18zo",
+      "object": "payment_intent",
+      "amount": 1998,
+      "amount_capturable": 0,
+      "amount_details": {
+        "tip": {
+        }
+      },
+      "amount_received": 1998,
+      "application": null,
+      "application_fee_amount": null,
+      "automatic_payment_methods": {
+        "allow_redirects": "always",
+        "enabled": true
+      },
+      "canceled_at": null,
+      "cancellation_reason": null,
+      "capture_method": "automatic_async",
+      "client_secret": "pi_3QgMxCFPlXRs14xe08ui18zo_secret_UKdAnQSSe783TKscYmJ1li3y2",
+      "confirmation_method": "automatic",
+      "created": 1736672130,
+      "currency": "nzd",
+      "customer": null,
+      "description": null,
+      "invoice": null,
+      "last_payment_error": null,
+      "latest_charge": "ch_3QgMxCFPlXRs14xe0npuvrQX",
+      "livemode": false,
+      "metadata": {
+      },
+      "next_action": null,
+      "on_behalf_of": null,
+      "payment_method": "pm_1QgMxEFPlXRs14xewC1jnsOk",
+      "payment_method_configuration_details": {
+        "id": "pmc_1QcaicFPlXRs14xej7nz5uMk",
+        "parent": null
+      },
+      "payment_method_options": {
+        "card": {
+          "installments": null,
+          "mandate_options": null,
+          "network": null,
+          "request_three_d_secure": "automatic"
+        },
+        "klarna": {
+          "preferred_locale": null
+        },
+        "link": {
+          "persistent_token": null
+        }
+      },
+      "payment_method_types": [
+        "card",
+        "klarna",
+        "link"
+      ],
+      "processing": null,
+      "receipt_email": null,
+      "review": null,
+      "setup_future_usage": null,
+      "shipping": null,
+      "source": null,
+      "statement_descriptor": null,
+      "statement_descriptor_suffix": null,
+      "status": "succeeded",
+      "transfer_data": null,
+      "transfer_group": null
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": "req_OnkYNPAyvCV8Ln",
+    "idempotency_key": "08b760be-d5e8-4da0-864d-91a6531fb8b3"
+  },
+  "type": "payment_intent.succeeded"
+}

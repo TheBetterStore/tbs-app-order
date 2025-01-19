@@ -13,6 +13,7 @@ export interface OrderDto {
   OrderItems: OrderItemDto[];
   CreatedTime: string;
   LastUpdatedTime: string;
+  Status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED';
 }
 
 export interface OrderItemDto {

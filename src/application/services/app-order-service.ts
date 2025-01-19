@@ -84,6 +84,8 @@ export class AppOrderService implements IAppOrderService {
       // Logger.debug(`Retrieved key as ${AppOrderService.stripeSecretKey}`);
     }
 
+    const order: Order = OrderViewModelMapper.mapToNewOrder(o);
+
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const stripe = require('stripe')(AppOrderService.stripeSecretKey);
 
@@ -93,11 +95,18 @@ export class AppOrderService implements IAppOrderService {
         amount: Math.floor(o.netTotal * 100), // Converts to cents and truncate any floating-point digits
         currency: 'nzd',
         automatic_payment_methods: {enabled: true},
+        receipt_email: order.receiptEmail,
+        matadata: {
+          orderId: order.orderId
+        }
       });
     } catch (e1) {
       throw e1;
     }
-    const order: Order = OrderViewModelMapper.mapToNewOrder(o);
+
+    order.stripePaymentIntent.id = intent?.paymentIntent?.id;
+    order.stripePaymentIntent.Status = intent?.paymentIntent?.status;
+
     const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
 
@@ -137,7 +146,6 @@ export class AppOrderService implements IAppOrderService {
     const event= JSON.stringify(
         {
           orderId: o.orderId,
-
           customerId: o.customerId,
           orderItems: o.orderItems,
           taxRate: o.taxRate,
