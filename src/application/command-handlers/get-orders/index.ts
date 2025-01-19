@@ -7,7 +7,10 @@ import {HttpUtils} from '@thebetterstore/tbs-lib-infra-common/lib/http-utils';
 import {IClaims} from "../../../domain/models/claims.interface";
 import {APIGatewayProxyEvent} from "aws-lambda";
 
+
+
 console.log('INFO - cold-starting lambdas...');
+
 exports.handler = async (event: APIGatewayProxyEvent) => {
   Logger.info('Entered get-orders.handler', event);
   Logger.debug(JSON.stringify(event));

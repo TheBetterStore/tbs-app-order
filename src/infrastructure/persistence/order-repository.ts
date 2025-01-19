@@ -134,6 +134,7 @@ export class OrderRepository implements IOrderRepository {
       LastUpdatedTime: o.lastUpdatedTime,
       TaxRate: o.taxRate,
       AmountCharged: o.amountCharged,
+      Status: o.status,
       TaxTotal: o.getTaxTotal(),
       NetTotal: o.getNetTotal(),
       GrossTotal: o.getGrossTotal(),
@@ -150,7 +151,7 @@ export class OrderRepository implements IOrderRepository {
 function toOrder(o: OrderDto): Order {
   const d: Order = new Order(o.OrderId || '', o.CustomerId, o.ReceiptEmail || '',
       o.OrderItems.map(toOrderItemVO as any), o.CreatedTime,
-      o.LastUpdatedTime, o.TaxRate, o.AmountCharged);
+      o.LastUpdatedTime, o.TaxRate, o.AmountCharged, o.Status);
   return d;
 }
 

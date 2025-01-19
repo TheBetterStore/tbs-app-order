@@ -1,6 +1,8 @@
 # tbs-app-order
 
-The Better Store's Order microservice implementation, using AWS SAM.
+The Better Store's Order microservice implementation, using AWS SAM. 
+
+Refer to https://docs.thebetterstore.net for further details (new articles describing this AWS implementation are coming soon).
 
 ## Prerequisites (assuming Windows or Linux OS)
 1. NodeJS 18+

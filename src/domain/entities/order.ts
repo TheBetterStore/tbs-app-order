@@ -12,6 +12,8 @@ export class Order {
   orderItems: OrderItemVO[] = [];
   taxRate: number = 0.15;
   amountCharged: number = 0;
+  status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED' = 'INITIAL';
+  stripePaymentIntent: any = {};
 
   /**
    * constructor
@@ -23,9 +25,11 @@ export class Order {
    * @param {lastUpdatedTime} lastUpdatedTime
    * @param {number} taxRate
    * @param {number} amountCharged
+   * @param {'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED'} status
    */
   constructor(orderId: string, customerId: string, receiptEmail: string, orderItems: OrderItemVO[],
-      createdTime: string, lastUpdatedTime: string, taxRate: number, amountCharged: number) {
+      createdTime: string, lastUpdatedTime: string, taxRate: number, amountCharged: number,
+              status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED') {
     this.orderId = orderId;
     this.customerId = customerId;
     this.receiptEmail = receiptEmail;
@@ -34,6 +38,7 @@ export class Order {
     this.lastUpdatedTime = lastUpdatedTime;
     this.taxRate = taxRate;
     this.amountCharged = amountCharged;
+    this.status = status;
   }
 
   /**
