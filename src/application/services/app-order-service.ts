@@ -134,7 +134,7 @@ export class AppOrderService implements IAppOrderService {
       Entries: [{
         Source: 'tbs-app-order.AppOrderService',
         Detail: JSON.stringify(order),
-        DetailType: 'StripeWebhookEvent',
+        DetailType: 'OrderConfirmedEvent',
         EventBusName: this.tbsEventBridgeArn,
       }],
     };
