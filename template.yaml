@@ -122,7 +122,7 @@ Resources:
   GetOrdersFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", GetOrdersFunction ] ]
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-GetOrdersFunction"
       RetentionInDays: 365
 
   CreateOrderFunction:
@@ -174,7 +174,7 @@ Resources:
   CreateOrderFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", CreateOrderFunction ] ]
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-CreateOrderFunction"
       RetentionInDays: 365
 
   PaymentIntentUpdatedFunction:
@@ -233,7 +233,7 @@ Resources:
   PaymentIntentUpdatedFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join [ "", [ "/aws/lambda/", PaymentIntentUpdatedFunction ] ]
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-PaymentIntentUpdatedFunction"
       RetentionInDays: 365
 
   ApiGwExecutionLogs:
