@@ -1,4 +1,4 @@
-import {PaymentIntentResult} from "@stripe/stripe-js";
+import {IStripePaymentIntentEvent} from "../../infrastructure/interfaces/stripe-payment-intent-event";
 
 export interface OrderViewModel {
   customerId: string;
@@ -12,7 +12,7 @@ export interface OrderViewModel {
   orderItems: OrderItemViewModel[];
   createdTime: string;
   lastUpdatedTime: string;
-  paymentIntent?: PaymentIntentResult;
+  paymentIntent?: IStripePaymentIntentEvent;
 }
 
 export interface OrderItemViewModel {

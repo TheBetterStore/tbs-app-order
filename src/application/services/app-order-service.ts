@@ -10,7 +10,7 @@ import {PutEventsCommandInput} from '@aws-sdk/client-eventbridge';
 import {Order} from '../../domain/entities/order';
 import {IEventBridgeClient} from '../../infrastructure/interfaces/eventbridge-client.interface';
 import {IParameterStoreClient} from '../../infrastructure/interfaces/parameterstore-client.interface';
-import {PaymentIntentResult} from "@stripe/stripe-js";
+import {IStripePaymentIntentEvent} from "../../infrastructure/interfaces/stripe-payment-intent-event";
 
 @injectable()
 /**
@@ -89,7 +89,7 @@ export class AppOrderService implements IAppOrderService {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const stripe = require('stripe')(AppOrderService.stripeSecretKey);
 
-    let intent: PaymentIntentResult;
+    let intent: IStripePaymentIntentEvent;
     try {
       intent = await stripe.paymentIntents.create( {
         amount: Math.floor(o.netTotal * 100), // Converts to cents and truncate any floating-point digits
@@ -105,8 +105,9 @@ export class AppOrderService implements IAppOrderService {
       throw e1;
     }
 
-    order.stripePaymentIntent.id = intent?.paymentIntent?.id;
-    order.stripePaymentIntent.status = intent?.paymentIntent?.status;
+    Logger.debug(`Received PaymentIntent response: `, JSON.stringify(intent));
+    order.stripePaymentIntent.id = intent?.id;
+    order.stripePaymentIntent.status = intent?.data?.object?.status;
 
     const result = await this.createOrderRec(order);
     const res = OrderViewModelMapper.mapOrderToOrderVM(result);
