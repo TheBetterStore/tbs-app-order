@@ -1,14 +1,19 @@
 {
+  "name": "tbs-app-order",
   "version": "1.0.0",
-  "description": "",
+  "description": "Order API/microservice as used by The Better Store",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheBetterStore/tbs-app-order.git"
+  },
   "main": "index.js",
   "scripts": {
     "build": "gulp",
     "test": "echo \"Error: no test specified\" && exit 1",
     "eslint": "eslint . --ext .ts"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Bryce Cummock",
+  "license": "MIT",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",
     "@types/jest": "^29.5.14",
