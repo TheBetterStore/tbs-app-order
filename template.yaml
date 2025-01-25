@@ -13,6 +13,13 @@ Parameters:
   InfraBaseCFName:
     Type: String
 
+  SecKmsKeysCFName:
+    Type: String
+    Default: tbs-sec-kms-prod
+
+  VpcCFStackName:
+    Type: String
+
   AppAdminCFName:
     Type: String
 
@@ -45,7 +52,126 @@ Parameters:
     AllowedValues: [DEBUG, INFO, WARN]
     Default: INFO
 
+  OrderRdsDbSnapshotId:
+    Type: String
+    Default: ""
+
+Conditions:
+  UseOrderRdsDbSnapshot: !Not [!Equals [!Ref OrderRdsDbSnapshotId, ""]]
+
 Resources:
+
+  OrderRdsDbSecretManager:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${AWS::StackName}/OrderRdsDbSecretManager
+      Description: 'Master credentials for Aurora database'
+      KmsKeyId: alias/aws/secretsmanager
+
+  OrderRdsDbSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Access from FromVPC"
+      VpcId:
+        Fn::ImportValue: !Sub ${VpcCFStackName}:VPC:Id
+      SecurityGroupIngress:
+        -
+          CidrIp:
+            Fn::ImportValue: !Sub ${VpcCFStackName}:VPC:Cidr
+          Description: "Allow traffic from inside VPC only"
+          FromPort: '3306'
+          IpProtocol: tcp
+          ToPort: '3306'
+#      SecurityGroupEgress:
+#        -
+#          CidrIp: "0.0.0.0/0"
+#          Description: "Allow all external traffic e.g. for updates"
+#          FromPort: '443'
+#          IpProtocol: tcp
+#          ToPort: '443'
+
+  OrderRdsDbCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      BacktrackWindow: 0
+      BackupRetentionPeriod: 1
+      ClusterScalabilityType: standard
+      CopyTagsToSnapshot: true
+      DatabaseName: orders
+      #DBClusterParameterGroupName: String
+      #DBInstanceParameterGroupName: String
+      DBSubnetGroupName: !Ref OrderRdsDbSubnetGroup
+      DeletionProtection: false
+      EnableCloudwatchLogsExports:
+        - error
+        - slowquery
+      # EnableGlobalWriteForwarding: Boolean
+      EnableHttpEndpoint: false
+      EnableIAMDatabaseAuthentication: false
+      EnableLocalWriteForwarding: false
+      Engine: aurora-mysql
+      EngineLifecycleSupport: open-source-rds-extended-support
+      EngineMode: provisioned
+      EngineVersion: "8.0.mysql_aurora.3.08.0"
+      # GlobalClusterIdentifier: String
+      KmsKeyId:
+        Fn::ImportValue: !Sub ${SecKmsKeysCFName}:InternalKmsKey:Id
+      ManageMasterUserPassword: true
+      MasterUsername: !If [UseOrderRdsDbSnapshot, !Ref "AWS::NoValue", "admin"]
+      MasterUserSecret:
+        KmsKeyId:
+          Fn::ImportValue: !Sub ${SecKmsKeysCFName}:InternalKmsKey:Id
+        # SecretArn: !Ref OrderRdsDbSecretManager
+      MonitoringInterval: 0
+      # MonitoringRoleArn: String
+      NetworkType: IPV4
+      PerformanceInsightsEnabled: false
+      Port: 3306
+#      ReadEndpoint:
+#        ReadEndpoint
+      # RestoreToTime: String
+      # RestoreType: String
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: 0
+        MaxCapacity: 1
+        SecondsUntilAutoPause: 300
+      SnapshotIdentifier: !If [UseOrderRdsDbSnapshot, !Ref OrderRdsDbSnapshotId, !Ref "AWS::NoValue"]
+      StorageEncrypted: true
+      StorageType: aurora
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-OrderRdsDbCluster
+      UseLatestRestorableTime: true
+      VpcSecurityGroupIds:
+        - !Ref OrderRdsDbSecurityGroup
+
+  OrderRdsDbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub ${AWS::StackName}-OrderRdsDbSubnetGroup
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${VpcCFStackName}:DbPrivateSubnetA:Id
+        - Fn::ImportValue: !Sub ${VpcCFStackName}:DbPrivateSubnetB:Id
+        - Fn::ImportValue: !Sub ${VpcCFStackName}:DbPrivateSubnetC:Id
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-OrderRdsDbSubnetGroup
+
+  OrderRdsRoute53Record:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Comment: !Sub "${AWS::StackName}-OrderRdsRoute53Record"
+      HostedZoneId:
+        Fn::ImportValue: !Sub ${InfraBaseCFName}:HostedZone:Id
+      Name:
+        Fn::Join:
+          - "."
+          - - ordersdb
+            - Fn::ImportValue: !Sub ${InfraBaseCFName}:HostedZone:DomainName
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - !GetAtt OrderRdsDbCluster.Endpoint.Address
 
   StripeSecretKey:
     Type: AWS::SSM::Parameter
@@ -54,6 +180,108 @@ Resources:
       Name: !Sub "/${AWS::StackName}/StripeSecretKey"
       Type: String
       Value: "TO ADD"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-LambdaPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:DescribeTable"
+                Resource: !GetAtt OrderTable.Arn
+
+
+  PaymentIntentLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-LambdaPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:ChangeMessageVisibility
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt PaymentIntentUpdatedEventQueue.Arn
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:DescribeTable"
+                Resource: !GetAtt OrderTable.Arn
+
+  LambdaVpcSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Access from FromVPC"
+      VpcId:
+        Fn::ImportValue: !Sub ${VpcCFStackName}:VPC:Id
+      SecurityGroupEgress:
+        -
+          CidrIp: "0.0.0.0/0"
+          Description: "Allow all external traffic e.g. for calling AW services"
+          FromPort: '443'
+          IpProtocol: tcp
+          ToPort: '443'
 
   OrderTable:
     Type: AWS::DynamoDB::Table
@@ -88,7 +316,6 @@ Resources:
       AutoPublishAlias: prod
       Description: Get order functions
       Tracing: Active
-      # Role: !GetAtt LambdaExcecutionRole.Arn
       DeploymentPreference:
         Type: AllAtOnce
       ReservedConcurrentExecutions: !Ref GetOrdersReservedConcurrency
@@ -99,17 +326,17 @@ Resources:
         SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
+          ORDERS_DB_SECRET_ARN: !GetAtt OrderRdsDbCluster.MasterUserSecret.SecretArn
           ORDER_TABLE_NAME: !Ref OrderTable
-      Policies:
-        - Statement:
-            - Sid: DynamoDbPolicy
-              Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:Get*
-              Resource: !GetAtt OrderTable.Arn
+      Role: !GetAtt LambdaExecutionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaVpcSG
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetA:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetB:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetC:Id
+
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -146,22 +373,20 @@ Resources:
         SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
+          ORDERS_DB_SECRET_ARN: !GetAtt OrderRdsDbCluster.MasterUserSecret.SecretArn
           ORDER_TABLE_NAME: !Ref OrderTable
           PAYMENT_API_URL: !Ref PaymentApiUrl
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKey
           TBS_EVENTBUS_ARN:
-            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrderTable
-        - Statement:
-            - Effect: Allow
-              Action: events:PutEvents
-              Resource:
-                Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-            - Effect: Allow
-              Action: ssm:GetParameter
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      Role: !GetAtt LambdaExecutionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaVpcSG
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetA:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetB:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetC:Id
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -198,29 +423,20 @@ Resources:
         SystemLogLevel: !Ref SystemLogLevel
       Environment:
         Variables:
+          ORDERS_DB_SECRET_ARN: !GetAtt OrderRdsDbCluster.MasterUserSecret.SecretArn
           ORDER_TABLE_NAME: !Ref OrderTable
           PAYMENT_API_URL: !Ref PaymentApiUrl
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKey
           TBS_EVENTBUS_ARN:
-            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrderTable
-        - Statement:
-            - Effect: Allow
-              Action: events:PutEvents
-              Resource:
-                Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-            - Effect: Allow
-              Action: ssm:GetParameter
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
-            - Effect: Allow
-              Action:
-                - sqs:ReceiveMessage
-                - sqs:ChangeMessageVisibility
-                - sqs:DeleteMessage
-                - sqs:GetQueueAttributes
-              Resource: !GetAtt PaymentIntentUpdatedEventQueue.Arn
+            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      Role: !GetAtt PaymentIntentLambdaExecutionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaVpcSG
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetA:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetB:Id
+          - Fn::ImportValue: !Sub ${VpcCFStackName}:AppPrivateSubnetC:Id
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -553,7 +769,7 @@ Resources:
       - OrderApi
     Properties:
       DomainName:
-        Fn::ImportValue: !Sub ${InfraBaseCFName}:ApiGwCustomDomainName
+        Fn::ImportValue: !Sub ${InfraBaseCFName}:ApiGwCustomDomain:Name
       ApiId: !Ref OrderApi
       Stage: !Ref OrderApi.Stage
       ApiMappingKey: "order/v1"
