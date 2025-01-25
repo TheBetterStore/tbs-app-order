@@ -61,13 +61,6 @@ Conditions:
 
 Resources:
 
-  OrderRdsDbSecretManager:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub ${AWS::StackName}/OrderRdsDbSecretManager
-      Description: 'Master credentials for Aurora database'
-      KmsKeyId: alias/aws/secretsmanager
-
   OrderRdsDbSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
