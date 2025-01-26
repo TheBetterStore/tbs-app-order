@@ -13,6 +13,10 @@ Parameters:
   InfraBaseCFName:
     Type: String
 
+  SecKmsKeysCFName:
+    Type: String
+    Default: tbs-sec-kms-prod
+
   AppAdminCFName:
     Type: String
 
@@ -77,6 +81,94 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
 
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-LambdaPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:DescribeTable"
+                Resource: !GetAtt OrderTable.Arn
+
+
+  PaymentIntentLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-LambdaPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:ChangeMessageVisibility
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt PaymentIntentUpdatedEventQueue.Arn
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:DescribeTable"
+                Resource: !GetAtt OrderTable.Arn
+
   GetOrdersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -100,16 +192,7 @@ Resources:
       Environment:
         Variables:
           ORDER_TABLE_NAME: !Ref OrderTable
-      Policies:
-        - Statement:
-            - Sid: DynamoDbPolicy
-              Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:Get*
-              Resource: !GetAtt OrderTable.Arn
+      Role: !GetAtt LambdaExecutionRole.Arn
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -150,18 +233,8 @@ Resources:
           PAYMENT_API_URL: !Ref PaymentApiUrl
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKey
           TBS_EVENTBUS_ARN:
-            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrderTable
-        - Statement:
-            - Effect: Allow
-              Action: events:PutEvents
-              Resource:
-                Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-            - Effect: Allow
-              Action: ssm:GetParameter
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
+            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      Role: !GetAtt LambdaExecutionRole.Arn
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -202,25 +275,8 @@ Resources:
           PAYMENT_API_URL: !Ref PaymentApiUrl
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKey
           TBS_EVENTBUS_ARN:
-            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrderTable
-        - Statement:
-            - Effect: Allow
-              Action: events:PutEvents
-              Resource:
-                Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBusArn
-            - Effect: Allow
-              Action: ssm:GetParameter
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
-            - Effect: Allow
-              Action:
-                - sqs:ReceiveMessage
-                - sqs:ChangeMessageVisibility
-                - sqs:DeleteMessage
-                - sqs:GetQueueAttributes
-              Resource: !GetAtt PaymentIntentUpdatedEventQueue.Arn
+            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      Role: !GetAtt PaymentIntentLambdaExecutionRole.Arn
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -553,7 +609,7 @@ Resources:
       - OrderApi
     Properties:
       DomainName:
-        Fn::ImportValue: !Sub ${InfraBaseCFName}:ApiGwCustomDomainName
+        Fn::ImportValue: !Sub ${InfraBaseCFName}:ApiGwCustomDomain:Name
       ApiId: !Ref OrderApi
       Stage: !Ref OrderApi.Stage
       ApiMappingKey: "order/v1"

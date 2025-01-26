@@ -11,7 +11,7 @@ sam deploy --template-file .aws-sam/build/template.yaml --stack-name $STACK_NAME
 --capabilities CAPABILITY_NAMED_IAM --region ap-southeast-2 --parameter-overrides Environment=$Environment \
 AppAdminCFName=tbs-app-admin-$Environment \
 AppLoginCFName=tbs-app-login-$Environment \
-InfraBaseCFName=tbs-infra-base-$Environment \
+InfraBaseCFName=tbs-infra-$Environment \
 --no-fail-on-empty-changeset \
 --tags Environment=$Environment StackName=$STACK_NAME TagProduct=$APP_NAME \
 --profile thebetterstore
