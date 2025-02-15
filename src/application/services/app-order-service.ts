@@ -2,13 +2,10 @@ import {inject, injectable} from 'inversify';
 import TYPES from '../../infrastructure/types';
 import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IOrderRepository} from '../../infrastructure/interfaces/order-repository.interface';
-import {IRestApiClient} from '../../infrastructure/interfaces/restapi-client.interface';
 import {IAppOrderService} from './app-order-service.interface';
 import {OrderViewModel} from '../viewmodels/order-viewmodel';
 import {OrderViewModelMapper} from '../mappers/order-viewmodel.mapper';
-import {PutEventsCommandInput} from '@aws-sdk/client-eventbridge';
 import {Order} from '../../domain/entities/order';
-import {IEventBridgeClient} from '../../infrastructure/interfaces/eventbridge-client.interface';
 import {IParameterStoreClient} from '../../infrastructure/interfaces/parameterstore-client.interface';
 import {IStripePaymentIntentEvent} from "../../infrastructure/interfaces/stripe-payment-intent-event";
 
@@ -18,25 +15,17 @@ import {IStripePaymentIntentEvent} from "../../infrastructure/interfaces/stripe-
  */
 export class AppOrderService implements IAppOrderService {
   private repo: IOrderRepository;
-  private eventBridgeClient: IEventBridgeClient;
   private parameterStoreClient: IParameterStoreClient;
-  private tbsEventBridgeArn: string;
   private static stripeSecretKey: string;
 
   /**
    * constructor
-   * @param {IRestApiClient} restApiClient
-   * @param {IEventBridgeClient} eventBridgeClient
    * @param {IParameterStoreClient} parameterStoreClient
    * @param {IOrderRepository} repo
    */
-  constructor(@inject(TYPES.IRestApiClient) restApiClient: IRestApiClient,
-              @inject(TYPES.IEventBridgeClient) eventBridgeClient: IEventBridgeClient,
-              @inject(TYPES.IParameterStoreClient) parameterStoreClient: IParameterStoreClient,
+  constructor(@inject(TYPES.IParameterStoreClient) parameterStoreClient: IParameterStoreClient,
               @inject(TYPES.IOrderRepository) repo: IOrderRepository) {
-    this.eventBridgeClient= eventBridgeClient;
     this.parameterStoreClient = parameterStoreClient;
-    this.tbsEventBridgeArn = process.env.TBS_EVENTBUS_ARN || '';
     this.repo = repo;
   }
 
@@ -129,17 +118,6 @@ export class AppOrderService implements IAppOrderService {
     order.stripePaymentIntent.status = status;
     order.status = 'PAID'
     await this.repo.updateOrder(order);
-
-    const params: PutEventsCommandInput = {
-      Entries: [{
-        Source: 'tbs-app-order.AppOrderService',
-        Detail: JSON.stringify(order),
-        DetailType: 'OrderConfirmedEvent',
-        EventBusName: this.tbsEventBridgeArn,
-      }],
-    };
-    Logger.debug(`Writing event with params:`, JSON.stringify(params));
-    return this.eventBridgeClient.send(params);
   }
 
   /**

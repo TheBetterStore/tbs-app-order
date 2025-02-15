@@ -80,6 +80,94 @@ Resources:
 #        WriteCapacityUnits: 1
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  DynamoDbStreamEventPipe:
+    Type: AWS::Pipes::Pipe
+    Properties:
+      Name: !Sub ${AWS::StackName}-ddb-to-eventbridge
+      Description: "Pipe to connect DDB stream to EventBridge event bus"
+      RoleArn: !GetAtt DynamoDbStreamEventPipeRole.Arn
+      Source: !GetAtt OrderTable.StreamArn
+      SourceParameters:
+        DynamoDBStreamParameters:
+          StartingPosition: LATEST
+          BatchSize: 10
+          DeadLetterConfig:
+            Arn: !GetAtt DynamoDbStreamEventPipeDLQ.Arn
+      Target:
+        Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      TargetParameters:
+        EventBridgeEventBusParameters:
+          DetailType: "OrderEvent"
+          Source: !Sub ${AWS::StackName}-DynamoDbStreamEventPipe
+
+
+  DynamoDbStreamEventPipeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - pipes.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SourcePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:GetRecords"
+                  - "dynamodb:GetShardIterator"
+                  - "dynamodb:ListStreams"
+                  - "sqs:SendMessage"
+                Resource:
+                  - !GetAtt OrderTable.StreamArn
+                  - !GetAtt DynamoDbStreamEventPipeDLQ.Arn
+        - PolicyName: TargetPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'events:PutEvents'
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+
+  DynamoDbStreamEventPipeDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: DLQ-StockEvents
+
+
+  DynamoDbStreamEventPipeDLQPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DynamoDbStreamEventPipeDLQ
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "events.amazonaws.com"
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt DynamoDbStreamEventPipeDLQ.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn":
+                  Fn::Join:
+                    - ''
+                    - - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/"
+                      - Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Name
+                      - "/*"
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
