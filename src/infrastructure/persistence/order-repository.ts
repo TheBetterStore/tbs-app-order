@@ -1,7 +1,6 @@
 import {IOrderRepository} from '../interfaces/order-repository.interface';
 import {inject, injectable} from 'inversify';
 import TYPES from '../types';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IDynamoDBClient} from '../interfaces/dynamodb-client.interface';
 import {DocumentClient} from 'aws-sdk/clients/dynamodb';
 import {InvalidDataError} from '../../domain/models/errors/invalid-data-error';
@@ -34,7 +33,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order>}
    */
   async getOrder(customerId: string, orderId: string): Promise<Order> {
-    Logger.info('Entered OrderRepository.getOrder');
+    console.info('Entered OrderRepository.getOrder');
     const params: DocumentClient.GetItemInput = {
       TableName: this.orderTableName,
       Key: {
@@ -43,7 +42,7 @@ export class OrderRepository implements IOrderRepository {
       },
     };
     const res = await this.ddbClient.get(params);
-    Logger.info('Exiting OrderRepository.getOrder');;
+    console.info('Exiting OrderRepository.getOrder');;
     const order = toOrder(res.Item as OrderDto);
     return order;
   }
@@ -54,7 +53,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order[]>}
    */
   async getOrders(customerId: string): Promise<Order[]> {
-    Logger.info('Entered OrderRepository.getOrders');
+    console.info('Entered OrderRepository.getOrders');
     const params = {
       TableName: this.orderTableName,
       ExpressionAttributeValues: {
@@ -62,14 +61,14 @@ export class OrderRepository implements IOrderRepository {
       },
       KeyConditionExpression: 'CustomerId = :cId',
     };
-    Logger.debug(`Params: ${JSON.stringify(params)}` );
+    console.debug(`Params: ${JSON.stringify(params)}` );
     const res = await this.ddbClient.query(params);
-    Logger.debug(`Received response from DB: ${JSON.stringify(res.Items)}` );
+    console.debug(`Received response from DB: ${JSON.stringify(res.Items)}` );
     let orders: Order[] = [];
     if (res.Items) {
       orders = res.Items.map(toOrder as any);
     }
-    Logger.info('Exiting OrderRepository.getOrders');
+    console.info('Exiting OrderRepository.getOrders');
     return orders as Order[];
   }
 
@@ -79,7 +78,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order>}
    */
   async createOrder(o: Order): Promise<Order> {
-    Logger.info('Entered OrderRepository.createOrder');
+    console.info('Entered OrderRepository.createOrder');
     const dto = OrderRepository.toDto(o);
     const params: DocumentClient.PutItemInput = {
       TableName: this.orderTableName,
@@ -89,7 +88,7 @@ export class OrderRepository implements IOrderRepository {
 
     const res = await this.ddbClient.put(params);
     console.log(util.inspect(res));
-    Logger.info('Exiting OrderRepository.createOrder');
+    console.info('Exiting OrderRepository.createOrder');
     return o;
   }
 
@@ -99,7 +98,7 @@ export class OrderRepository implements IOrderRepository {
    * @returns {Promise<Order>}
    */
   async updateOrder(p: Order): Promise<Order> {
-    Logger.info('Entered OrderRepository.updateOrder');
+    console.info('Entered OrderRepository.updateOrder');
 
     const currentTime = new Date();
     if (!p.orderId) {
@@ -118,7 +117,7 @@ export class OrderRepository implements IOrderRepository {
 
     const res = await this.ddbClient.put(params);
     console.log(util.inspect(res));
-    Logger.info('Exiting OrderRepository.updateOrder');
+    console.info('Exiting OrderRepository.updateOrder');
     return p;
   }
 

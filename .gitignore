@@ -6,3 +6,4 @@ dist
 generated-template.yaml
 /*.svg
 /*local.sh
+/**/test.ts

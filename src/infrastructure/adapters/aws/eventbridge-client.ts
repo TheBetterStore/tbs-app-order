@@ -2,7 +2,6 @@ import {PutEventsCommand, PutEventsCommandInput, PutEventsCommandOutput} from '@
 import {IEventBridgeClient} from '../../interfaces/eventbridge-client.interface';
 import {EventBridgeClient as EbClient} from '@aws-sdk/client-eventbridge';
 import {injectable} from 'inversify';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 
 @injectable()
 /**
@@ -16,7 +15,7 @@ export class EventBridgeClient implements IEventBridgeClient {
    * @param {PutEventsCommandInput} params
    */
   async send(params: PutEventsCommandInput): Promise<PutEventsCommandOutput> {
-    Logger.info('Entered EventBridgeClient.send()');
+    console.info('Entered EventBridgeClient.send()');
     const data = await this.ebClient.send(new PutEventsCommand(params));
     return data;
   }

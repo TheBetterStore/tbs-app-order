@@ -13,7 +13,7 @@ export interface OrderDto {
   OrderItems: OrderItemDto[];
   CreatedTime: string;
   LastUpdatedTime: string;
-  Status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED';
+  Status: 'INITIAL' | 'PAID' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
   StripePaymentIntent: StripePaymentIntentDto;
 }
 
