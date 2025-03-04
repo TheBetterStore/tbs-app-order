@@ -1,6 +1,5 @@
 import {SSMClient, GetParameterCommand, GetParameterCommandInput} from '@aws-sdk/client-ssm';
 import {injectable} from 'inversify';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IParameterStoreClient} from '../../interfaces/parameterstore-client.interface';
 
 @injectable()
@@ -16,7 +15,7 @@ export class ParameterStoreClient implements IParameterStoreClient {
    * @returns {Promise<any>}
    */
   async getValue(key: string, withDecryption: boolean): Promise<any> {
-    Logger.info('Entered ParameterStoreClient.getValue()');
+    console.info('Entered ParameterStoreClient.getValue()');
 
     const params: GetParameterCommandInput = {
       Name: key,

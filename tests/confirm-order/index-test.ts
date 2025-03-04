@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import TYPES from '../../src/infrastructure/types';
 
 import {IAppOrderService} from '../../src/application/services/app-order-service.interface';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {HttpUtils} from '@thebetterstore/tbs-lib-infra-common/lib/http-utils';
 import {Container} from 'inversify';
 import {IOrderRepository} from '../../src/infrastructure/interfaces/order-repository.interface';
@@ -19,7 +18,7 @@ sampleFunctionTest();
  * @constructor
  */
 async function sampleFunctionTest() {
-  Logger.info('Entered handler');
+  console.info('Entered handler');
   const container = new Container();
 
   container.bind<IAppOrderService>(TYPES.IAppOrderService).to(AppOrderService).inSingletonScope();
@@ -33,7 +32,7 @@ async function sampleFunctionTest() {
 
 
   const response = HttpUtils.buildJsonResponse(201, p);
-  Logger.info('Exiting handler');
+  console.info('Exiting handler');
   return response;
 }
 

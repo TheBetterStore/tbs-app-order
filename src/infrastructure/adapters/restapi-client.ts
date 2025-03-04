@@ -1,6 +1,5 @@
 import {injectable} from 'inversify';
 import {IRestApiClient} from '../interfaces/restapi-client.interface';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 const axios = require('axios');
 const AWSXRay = require('aws-xray-sdk-core');
 AWSXRay.captureHTTPsGlobal(require('https'));
@@ -21,7 +20,7 @@ export class RestApiClient implements IRestApiClient {
    */
   async post(endpointUrl: string, body: any, headers: any) {
     // Using self here; as this reference can change within async functions!
-    Logger.info(`Calling: ${endpointUrl}`);
+    console.info(`Calling: ${endpointUrl}`);
 
     const axiosRequestConfig = {
       timeout: Number(API_REQUEST_TIMEOUT),

@@ -2,13 +2,12 @@ import 'reflect-metadata';
 import TYPES from '../../../infrastructure/types';
 import container from './container';
 import {SQSEvent} from 'aws-lambda';
-import {Logger} from '@thebetterstore/tbs-lib-infra-common/lib/logger';
 import {IStripePaymentIntentEvent} from "../../../infrastructure/interfaces/stripe-payment-intent-event";
 import {IAppOrderService} from "../../services/app-order-service.interface";
 
 console.log('INFO - lambda is cold-starting.');
 exports.handler = async (event: SQSEvent) => {
-  Logger.info('Entered confirm-order handler', event);
+  console.info('Entered confirm-order handler', event);
 
   const svc = container.get<IAppOrderService>(TYPES.IAppOrderService);
 
@@ -16,7 +15,7 @@ exports.handler = async (event: SQSEvent) => {
   for(let i = 0; i < recs.length; i++) {
     const rec = recs[i];
 
-    Logger.debug(rec.body);
+    console.debug(rec.body);
     const o: IStripePaymentIntentEvent = JSON.parse(rec.body);
 
     const mappedEvent: IStripePaymentIntentEvent = {
@@ -45,7 +44,7 @@ exports.handler = async (event: SQSEvent) => {
       type: o.type
     }
 
-    Logger.debug(`Received event type: ${mappedEvent?.type}`);
+    console.debug(`Received event type: ${mappedEvent?.type}`);
 
     switch(mappedEvent?.type) {
       case 'payment_intent.succeeded':
@@ -55,5 +54,5 @@ exports.handler = async (event: SQSEvent) => {
         break;
     }
   }
-  Logger.info('Exiting handler');
+  console.info('Exiting handler');
 };

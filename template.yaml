@@ -35,6 +35,10 @@ Parameters:
     Type: String
     Default: 2
 
+  TransformDdbStreamOrderEventReservedConcurrency:
+    Type: String
+    Default: 10
+
   PaymentApiUrl:
     Type: String
     Default: https://api.thebetterstore.net
@@ -81,15 +85,15 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
       StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
+        StreamViewType: NEW_IMAGE
 
   DynamoDbStreamEventPipe:
     Type: AWS::Pipes::Pipe
     Properties:
-      Name: !Sub ${AWS::StackName}-ddb-to-eventbridge
       Description: "Pipe to connect DDB stream to EventBridge event bus"
       RoleArn: !GetAtt DynamoDbStreamEventPipeRole.Arn
       Source: !GetAtt OrderTable.StreamArn
+      Enrichment: !GetAtt TransformDdbStreamOrderEventFunction.Arn
       SourceParameters:
         DynamoDBStreamParameters:
           StartingPosition: LATEST
@@ -140,6 +144,10 @@ Resources:
                   - 'events:PutEvents'
                 Resource:
                   Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt TransformDdbStreamOrderEventFunction.Arn
 
   DynamoDbStreamEventPipeDLQ:
     Type: AWS::SQS::Queue
@@ -256,6 +264,34 @@ Resources:
                   - "dynamodb:BatchGetItem"
                   - "dynamodb:DescribeTable"
                 Resource: !GetAtt OrderTable.Arn
+
+  TransformDdbStreamOrderEventLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-LambdaPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource:
+                  Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*"
 
   GetOrdersFunction:
     Type: AWS::Serverless::Function
@@ -378,6 +414,42 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-PaymentIntentUpdatedFunction"
+      RetentionInDays: 365
+
+  TransformDdbStreamOrderEventFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: index.handler
+      Runtime: nodejs22.x
+      MemorySize: 512
+      Timeout: 10
+      Description: Transform Order DBStream for Events
+      Tracing: Active
+      ReservedConcurrentExecutions: !Ref TransformDdbStreamOrderEventReservedConcurrency
+      LoggingConfig:
+        LogGroup: !Ref TransformDdbStreamOrderEventFunctionLogs
+        LogFormat: JSON
+        ApplicationLogLevel: !Ref AppLoggingLevel
+        SystemLogLevel: !Ref SystemLogLevel
+      Environment:
+        Variables:
+          TBS_EVENTBUS_ARN:
+            Fn::ImportValue: !Sub ${InfraBaseCFName}:TbsEventBus:Arn
+      Role: !GetAtt TransformDdbStreamOrderEventLambdaExecutionRole.Arn
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - src/application/command-handlers/transform-dbstream-orderevent/index.ts
+
+  TransformDdbStreamOrderEventFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-TransformDdbStreamOrderEventFunction"
       RetentionInDays: 365
 
   ApiGwExecutionLogs:
