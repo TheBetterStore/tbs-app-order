@@ -28,6 +28,7 @@ exports.handler = async (event: APIGatewayEvent, context) => {
   }
 
   orderVm.customerId = userClaims.sub;
+  orderVm.receiptEmail = userClaims["cognito:username"];
 
   const svc = container.get<IAppOrderService>(TYPES.IAppOrderService);
   const p = await svc.createOrder(orderVm);
