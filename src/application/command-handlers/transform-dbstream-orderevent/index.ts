@@ -10,21 +10,21 @@ exports.handler = async (events: any) => {
 
   for(let i = 0; i < events.length; i++) {
     const event = events[i];
+
     if (event.eventName == 'INSERT' || event.eventName == 'MODIFY') {
-      const mappedEvent = mapDdbOrder(event.dynamodb.NewImage);
-      mappedEvents.push(mappedEvent, false);
+      event.order = mapDdbOrder(event.dynamodb.NewImage);
+      event.dynamodb = undefined;
     }
     else {
-      const mappedEvent = mapDdbOrder(event.dynamodb.OldImage);
-      mappedEvents.push(mappedEvent, true);
+      console.log('Deleting event');
     }
   }
-  console.info('Exiting handler');
-  return mappedEvents;
+  console.info('Exiting handler, returning...', mappedEvents);
+  return events;
 };
 
-function mapDdbOrder(i: DdbOrderDto, isDelete: boolean = false): OrderDto {
-  const r: OrderDto = {
+function mapDdbOrder(i: DdbOrderDto, isDelete: boolean = false): any {
+  const r: any = {
     CustomerId: i.CustomerId.S,
     OrderId: i.OrderId.S,
     ReceiptEmail: i.ReceiptEmail.S,
