@@ -128,7 +128,7 @@ export class OrderRepository implements IOrderRepository {
    */
   static toDto(o: Order): OrderDto {
     const d: OrderDto = {
-      OrderId: o.orderId,
+      OrderIdX: o.orderId,
       CustomerId: o.customerId,
       ReceiptEmail: o.receiptEmail,
       OrderItems: o.orderItems.map(toOrderItemDto),
