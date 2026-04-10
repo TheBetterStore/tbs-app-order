@@ -1,5 +1,5 @@
 APP_NAME=tbs-app-order
-STACK_NAME=$APP_NAME-$Environment
+STACK_NAME=$APP_NAME-$ENVIRONMENT
 
 sam build --cached
 
